@@ -3,6 +3,8 @@ import { PageClientImpl } from './PageClientImpl';
 import { isVideoCodec } from '@/lib/types';
 import { getLiveKitURL } from '@/lib/getLiveKitURL';
 
+export const runtime = 'edge';
+
 export default async function Page({
   params,
   searchParams,
