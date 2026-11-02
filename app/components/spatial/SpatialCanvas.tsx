@@ -32,6 +32,9 @@ import {
   PhoneOff,
   Plus,
   Navigation,
+  StickyNote,
+  PlaySquare,
+  LayoutTemplate,
 } from 'lucide-react';
 
 export interface UserChoices {
@@ -63,8 +66,9 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
   const [localAvatarId] = useState(() => userChoices?.avatarId || 'avocado');
   const [isDraggingLocal, setIsDraggingLocal] = useState(false);
 
-  // Templates Modal State
+  // Modals & Menus State
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
 
   // Remote Participant Positions
   const [peerStates, setPeerStates] = useState<Record<string, SpatialParticipantState>>({});
@@ -382,6 +386,16 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
     // Only handle primary button
     if (e.button !== 0) return;
 
+    // Do NOT pan canvas if user pressed any button, input, header, or dialog
+    const target = e.target as HTMLElement | null;
+    if (
+      target?.closest(
+        'button, input, textarea, select, a, header, nav, [role="dialog"], [role="button"], .ui-interactive, .modal-backdrop'
+      )
+    ) {
+      return;
+    }
+
     pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
     hasDraggedRef.current = false;
     setIsPanning(true);
@@ -397,6 +411,17 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (hasDraggedRef.current) return;
     if (!containerRef.current) return;
+
+    // CRITICAL FIX: Do NOT move avatar if user clicked any button, top taskbar, bottom dock, or modal
+    const target = e.target as HTMLElement | null;
+    if (
+      target?.closest(
+        'button, input, textarea, select, a, header, nav, [role="dialog"], [role="button"], .ui-interactive, .modal-backdrop'
+      )
+    ) {
+      return;
+    }
+
     const rect = containerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
@@ -570,6 +595,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
 
       {/* PopSpace Room Taskbar */}
       <header
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
           top: 0,
@@ -810,6 +837,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
 
       {/* PopSpace Viewport Zoom & Recenter Controls */}
       <div
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
           right: '24px',
@@ -895,6 +924,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
 
       {/* PopSpace Bottom Action Bar (Quick Add & Proximity Audio) */}
       <div
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
           bottom: '24px',
@@ -906,26 +937,136 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
           gap: '10px',
         }}
       >
-        <button
-          onClick={() => setIsTemplatesOpen(true)}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 18px',
-            borderRadius: '999px',
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #ECE7E1',
-            boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
-            color: '#2D3139',
-            fontSize: '13px',
-            fontWeight: 700,
-            cursor: 'pointer',
-          }}
-        >
-          <Plus size={16} />
-          <span>Add Content</span>
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setIsAddMenuOpen((open) => !open)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '10px 18px',
+              borderRadius: '999px',
+              backgroundColor: isAddMenuOpen ? '#F4F5F8' : '#FFFFFF',
+              border: '1px solid #ECE7E1',
+              boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
+              color: '#2D3139',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Plus size={16} />
+            <span>Add Content</span>
+          </button>
+
+          {/* Add Content Popover Menu */}
+          {isAddMenuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                bottom: '54px',
+                left: 0,
+                width: '210px',
+                backgroundColor: '#FFFFFF',
+                borderRadius: '16px',
+                border: '1px solid #ECE7E1',
+                boxShadow: '0 12px 32px rgba(60, 50, 40, 0.14)',
+                padding: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                zIndex: 100,
+              }}
+            >
+              {/* Sticky Note */}
+              <button
+                onClick={() => {
+                  handleAddSticky();
+                  setIsAddMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: '#2D3139',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FBF9F6')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <StickyNote size={16} color="#F1A41D" />
+                <span>Sticky Note</span>
+              </button>
+
+              {/* YouTube Video */}
+              <button
+                onClick={() => {
+                  handleAddYouTube();
+                  setIsAddMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: '#2D3139',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FBF9F6')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <PlaySquare size={16} color="#EE6659" />
+                <span>YouTube Player</span>
+              </button>
+
+              <div style={{ height: 1, backgroundColor: '#ECE7E1', margin: '4px 6px' }} />
+
+              {/* Room Templates */}
+              <button
+                onClick={() => {
+                  setIsTemplatesOpen(true);
+                  setIsAddMenuOpen(false);
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  padding: '9px 12px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  color: '#2D3139',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  width: '100%',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FBF9F6')}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                <LayoutTemplate size={16} color="#6259BE" />
+                <span>Room Templates...</span>
+              </button>
+            </div>
+          )}
+        </div>
 
         <button
           onClick={handleAddSticky}
