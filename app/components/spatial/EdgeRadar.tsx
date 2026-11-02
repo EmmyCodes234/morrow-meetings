@@ -3,6 +3,7 @@
 import React from 'react';
 import { SpatialParticipantState } from './types';
 import { ArrowUpRight } from 'lucide-react';
+import { getInitials } from '../popspace/avatarMetadata';
 
 interface EdgeRadarProps {
   peers: SpatialParticipantState[];
@@ -30,7 +31,7 @@ export const EdgeRadar: React.FC<EdgeRadarProps> = ({
         const screenX = peer.x * canvasZoom + canvasPan.x;
         const screenY = peer.y * canvasZoom + canvasPan.y;
 
-        const margin = 40;
+        const margin = 36;
         const isOffscreen =
           screenX < margin ||
           screenX > viewportWidth - margin ||
@@ -43,10 +44,17 @@ export const EdgeRadar: React.FC<EdgeRadarProps> = ({
         const clampedX = Math.max(margin, Math.min(viewportWidth - margin, screenX));
         const clampedY = Math.max(margin, Math.min(viewportHeight - margin, screenY));
 
+        const initials = getInitials(peer.name);
+
         return (
           <button
             key={peer.identity}
-            onClick={() => onFocusPeer(peer)}
+            className="ui-interactive"
+            onClick={(e) => {
+              e.stopPropagation();
+              onFocusPeer(peer);
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
             style={{
               position: 'fixed',
               left: clampedX,
@@ -56,19 +64,34 @@ export const EdgeRadar: React.FC<EdgeRadarProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 12px',
+              padding: '5px 10px',
               backgroundColor: '#FFFFFF',
               borderRadius: '999px',
-              border: `2px solid ${peer.avatarColor || '#9993EB'}`,
-              boxShadow: '0 4px 14px rgba(60, 50, 40, 0.15)',
+              border: `1.5px solid ${peer.avatarColor || '#4F46E5'}`,
+              boxShadow: '0 4px 14px rgba(15, 23, 42, 0.12)',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               touchAction: 'manipulation',
             }}
           >
-            <span style={{ fontSize: '13px' }}>{peer.avatarEmoji || '😊'}</span>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: '#2D3139' }}>{peer.name}</span>
-            <ArrowUpRight size={13} color="#949CBA" />
+            <div
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                backgroundColor: peer.avatarColor || '#4F46E5',
+                color: '#FFFFFF',
+                fontSize: '9px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {initials}
+            </div>
+            <span style={{ fontSize: '12px', fontWeight: 600, color: '#1E293B' }}>{peer.name}</span>
+            <ArrowUpRight size={12} color="#94A3B8" />
           </button>
         );
       })}

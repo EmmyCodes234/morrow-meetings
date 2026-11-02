@@ -342,11 +342,37 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
       return;
     }
 
+    if (activeTouchesRef.current.has(e.pointerId)) {
+      activeTouchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    }
+
+    // Two-finger Pinch-to-zoom on touchscreens
+    if (activeTouchesRef.current.size >= 2 && pinchStartDistRef.current && pinchCenterRef.current) {
+      const touches = Array.from(activeTouchesRef.current.values());
+      const p1 = touches[0];
+      const p2 = touches[1];
+      const currentDist = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      const scale = currentDist / pinchStartDistRef.current;
+      const newZoom = Math.min(2.0, Math.max(0.4, Number((pinchStartZoomRef.current * scale).toFixed(2))));
+
+      const rect = containerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const mouseX = pinchCenterRef.current.x - rect.left;
+        const mouseY = pinchCenterRef.current.y - rect.top;
+        const newPanX = mouseX - (mouseX - pan.x) * (newZoom / zoom);
+        const newPanY = mouseY - (mouseY - pan.y) * (newZoom / zoom);
+        setZoom(newZoom);
+        setPan({ x: newPanX, y: newPanY });
+      }
+      hasDraggedRef.current = true;
+      return;
+    }
+
     // Canvas Background Dragging (Panning)
     if (isPanning && panStartRef.current) {
       if (pointerDownPosRef.current) {
         const dist = Math.hypot(e.clientX - pointerDownPosRef.current.x, e.clientY - pointerDownPosRef.current.y);
-        if (dist > 6) {
+        if (dist > 8) {
           hasDraggedRef.current = true;
         }
       }
@@ -360,6 +386,12 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
+    activeTouchesRef.current.delete(e.pointerId);
+    if (activeTouchesRef.current.size < 2) {
+      pinchStartDistRef.current = null;
+      pinchCenterRef.current = null;
+    }
+
     if (isDraggingLocal) {
       setIsDraggingLocal(false);
       localDragRef.current = null;
@@ -369,19 +401,23 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
       // Send one final reliable coordinate packet
       broadcastPacket({ type: 'pos', id: localParticipant.identity, x: localPos.x, y: localPos.y }, true);
     }
-    if (isPanning) {
+    if (isPanning && activeTouchesRef.current.size === 0) {
       setIsPanning(false);
       panStartRef.current = null;
     }
   };
 
-  // Canvas Panning State
+  // Canvas Multi-Touch & Panning State
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
   const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
   const hasDraggedRef = useRef(false);
+  const activeTouchesRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchStartDistRef = useRef<number | null>(null);
+  const pinchStartZoomRef = useRef<number>(1);
+  const pinchCenterRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Background pointer down (Pan or Tap-to-walk)
+  // Background pointer down (Pan or Tap-to-walk or Pinch-to-zoom)
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     // Only handle primary button
     if (e.button !== 0) return;
@@ -396,19 +432,37 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
       return;
     }
 
-    pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
-    hasDraggedRef.current = false;
-    setIsPanning(true);
-    panStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      panX: pan.x,
-      panY: pan.y,
-    };
+    activeTouchesRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    // Multi-touch Pinch to Zoom on mobile touchscreens
+    if (activeTouchesRef.current.size === 2) {
+      const [p1, p2] = Array.from(activeTouchesRef.current.values());
+      pinchStartDistRef.current = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+      pinchStartZoomRef.current = zoom;
+      pinchCenterRef.current = { x: (p1.x + p2.x) / 2, y: (p1.y + p2.y) / 2 };
+      hasDraggedRef.current = true;
+      setIsPanning(false);
+      return;
+    }
+
+    if (activeTouchesRef.current.size === 1) {
+      pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+      hasDraggedRef.current = false;
+      setIsPanning(true);
+      panStartRef.current = {
+        x: e.clientX,
+        y: e.clientY,
+        panX: pan.x,
+        panY: pan.y,
+      };
+    }
   };
 
   // Tap to walk: Quick click on canvas floor moves avatar smoothly there
   const handleCanvasClick = (e: React.MouseEvent) => {
+    if (isAddMenuOpen) {
+      setIsAddMenuOpen(false);
+    }
     if (hasDraggedRef.current) return;
     if (!containerRef.current) return;
 
@@ -568,33 +622,35 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
       style={{
         position: 'relative',
         width: '100vw',
-        height: '100vh',
+        height: '100dvh',
         overflow: 'hidden',
-        backgroundColor: '#FFF8F0', // Warm paper canvas background
+        backgroundColor: '#F8FAFC',
         userSelect: 'none',
         touchAction: 'none',
       }}
       onPointerDown={handleCanvasPointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       onClick={handleCanvasClick}
       onWheel={handleWheel}
     >
-      {/* Warm Ambient Dot-Grid Floor */}
+      {/* Subtle Dot-Grid Floor */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: `radial-gradient(#D4CEBA 1.2px, transparent 1.2px)`,
-          backgroundSize: `${32 * zoom}px ${32 * zoom}px`,
+          backgroundImage: `radial-gradient(#CBD5E1 1.2px, transparent 1.2px)`,
+          backgroundSize: `${28 * zoom}px ${28 * zoom}px`,
           backgroundPosition: `${pan.x}px ${pan.y}px`,
           pointerEvents: 'none',
-          opacity: 0.65,
+          opacity: 0.6,
         }}
       />
 
-      {/* PopSpace Room Taskbar */}
+      {/* Modern Room Taskbar */}
       <header
+        className="ui-interactive"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         style={{
@@ -602,67 +658,87 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
           top: 0,
           left: 0,
           right: 0,
-          height: '56px',
+          height: '52px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 20px',
+          padding: '0 12px',
           backgroundColor: '#FFFFFF',
-          borderBottom: '1px solid #ECE7E1',
-          boxShadow: '0 2px 10px rgba(60, 50, 40, 0.04)',
+          borderBottom: '1px solid #E2E8F0',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
           zIndex: 80,
         }}
       >
-        {/* Left: PopSpace Logo & Room Pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <img
-            src="/logo.svg"
-            alt="PopSpace logo"
-            style={{ height: '18px', width: 'auto', display: 'block', cursor: 'pointer' }}
-            onClick={() => (window.location.href = '/')}
-          />
+        {/* Left: Brand & Room Pill */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <div
+            onClick={() => (window.location.href = '/')}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '4px 10px',
-              borderRadius: '999px',
-              backgroundColor: '#FBF9F6',
-              border: '1px solid #ECE7E1',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: '#575F75',
+              cursor: 'pointer',
+              fontWeight: 800,
+              fontSize: '15px',
+              color: '#0F172A',
+              letterSpacing: '-0.02em',
             }}
           >
-            <span>{roomName}</span>
-            <span style={{ color: '#949CBA' }}>•</span>
-            <Users size={12} />
+            <div
+              style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: '#4F46E5',
+              }}
+            />
+            <span>Morrow</span>
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '3px 8px',
+              borderRadius: '999px',
+              backgroundColor: '#F1F5F9',
+              border: '1px solid #E2E8F0',
+              fontSize: '11px',
+              fontWeight: 700,
+              color: '#475569',
+            }}
+          >
+            <span style={{ maxWidth: '80px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {roomName}
+            </span>
+            <span style={{ color: '#94A3B8' }}>•</span>
+            <Users size={11} />
             <span>{remoteParticipants.length + 1}</span>
           </div>
         </div>
 
         {/* Center: Media Toggles */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           {/* Mic */}
           <button
             onClick={handleToggleMic}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
+              gap: '5px',
+              padding: '6px 12px',
               borderRadius: '999px',
-              border: 'none',
-              backgroundColor: isMicOn ? '#F4F5F8' : '#FDEEEC',
-              color: isMicOn ? '#2D3139' : '#EE6659',
-              fontSize: '13px',
+              border: `1px solid ${isMicOn ? '#E2E8F0' : '#FCA5A5'}`,
+              backgroundColor: isMicOn ? '#F8FAFC' : '#FEF2F2',
+              color: isMicOn ? '#334155' : '#EF4444',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            {isMicOn ? <Mic size={15} /> : <MicOff size={15} />}
+            {isMicOn ? <Mic size={14} /> : <MicOff size={14} />}
             <span className="hidden sm:inline">{isMicOn ? 'Mute' : 'Unmuted'}</span>
           </button>
 
@@ -672,65 +748,65 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
+              gap: '5px',
+              padding: '6px 12px',
               borderRadius: '999px',
-              border: 'none',
-              backgroundColor: isVideoOn ? '#F4F5F8' : '#FBF9F6',
-              color: isVideoOn ? '#2D3139' : '#575F75',
-              fontSize: '13px',
+              border: `1px solid ${isVideoOn ? '#C7D2FE' : '#E2E8F0'}`,
+              backgroundColor: isVideoOn ? '#EEF2FF' : '#F8FAFC',
+              color: isVideoOn ? '#4F46E5' : '#334155',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            {isVideoOn ? <Video size={15} /> : <VideoOff size={15} />}
+            {isVideoOn ? <Video size={14} /> : <VideoOff size={14} />}
             <span className="hidden sm:inline">{isVideoOn ? 'Cam On' : 'Avatar'}</span>
           </button>
 
-          {/* Screen Share */}
+          {/* Screen Share (Desktop only) */}
           <button
             onClick={handleToggleScreenShare}
+            className="hidden md:flex"
             style={{
-              display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
+              gap: '5px',
+              padding: '6px 12px',
               borderRadius: '999px',
-              border: 'none',
-              backgroundColor: isScreenSharing ? '#E4FBF8' : '#F4F5F8',
-              color: isScreenSharing ? '#00786D' : '#2D3139',
-              fontSize: '13px',
+              border: '1px solid #E2E8F0',
+              backgroundColor: isScreenSharing ? '#ECFDF5' : '#F8FAFC',
+              color: isScreenSharing ? '#059669' : '#334155',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            <Monitor size={15} />
-            <span className="hidden sm:inline">{isScreenSharing ? 'Sharing' : 'Share'}</span>
+            <Monitor size={14} />
+            <span>{isScreenSharing ? 'Sharing' : 'Share'}</span>
           </button>
         </div>
 
         {/* Right: Copy Link & Leave */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <button
             onClick={handleCopyLink}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
+              gap: '5px',
+              padding: '6px 10px',
               borderRadius: '999px',
-              border: '1px solid #ECE7E1',
+              border: '1px solid #E2E8F0',
               backgroundColor: '#FFFFFF',
-              color: copiedLink ? '#00786D' : '#2D3139',
-              fontSize: '13px',
+              color: copiedLink ? '#059669' : '#334155',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
             }}
           >
-            {copiedLink ? <Check size={14} color="#00786D" /> : <Share2 size={14} />}
-            <span className="hidden sm:inline">{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+            {copiedLink ? <Check size={13} color="#059669" /> : <Share2 size={13} />}
+            <span className="hidden sm:inline">{copiedLink ? 'Copied' : 'Invite'}</span>
           </button>
 
           <button
@@ -738,18 +814,18 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
+              gap: '5px',
+              padding: '6px 12px',
               borderRadius: '999px',
               border: 'none',
-              backgroundColor: '#FDEEEC',
-              color: '#EE6659',
-              fontSize: '13px',
+              backgroundColor: '#FEF2F2',
+              color: '#EF4444',
+              fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
             }}
           >
-            <PhoneOff size={14} />
+            <PhoneOff size={13} />
             <span className="hidden sm:inline">Leave</span>
           </button>
         </div>
@@ -775,6 +851,7 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
           onDeleteWidget={handleDeleteWidget}
           remoteParticipants={remoteParticipants}
           localParticipant={localParticipant}
+          zoom={zoom}
         />
 
         {/* Remote Participants with Authentic PopSpace Animated Sprites */}
@@ -835,15 +912,16 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
         onFocusPeer={handleFocusPeer}
       />
 
-      {/* PopSpace Viewport Zoom & Recenter Controls */}
+      {/* Modern Viewport Zoom & Recenter Controls */}
       <div
+        className="ui-interactive"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
-          right: '24px',
-          bottom: '24px',
-          zIndex: 90,
+          right: '16px',
+          bottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 58px)',
+          zIndex: 85,
           display: 'flex',
           flexDirection: 'column',
           gap: '8px',
@@ -853,20 +931,20 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
           onClick={handleRecenter}
           title="Center on my avatar"
           style={{
-            width: '40px',
-            height: '40px',
+            width: '38px',
+            height: '38px',
             borderRadius: '50%',
             backgroundColor: '#FFFFFF',
-            border: '1px solid #ECE7E1',
-            boxShadow: '0 4px 14px rgba(60, 50, 40, 0.08)',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#2D3139',
+            color: '#1E293B',
             cursor: 'pointer',
           }}
         >
-          <Navigation size={18} />
+          <Navigation size={16} />
         </button>
 
         <div
@@ -875,8 +953,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             flexDirection: 'column',
             backgroundColor: '#FFFFFF',
             borderRadius: '12px',
-            border: '1px solid #ECE7E1',
-            boxShadow: '0 4px 14px rgba(60, 50, 40, 0.08)',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.08)',
             overflow: 'hidden',
           }}
         >
@@ -884,12 +962,12 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             onClick={() => setZoom((z) => Math.min(2.0, Number((z * 1.15).toFixed(2))))}
             title="Zoom In"
             style={{
-              width: '40px',
-              height: '36px',
+              width: '38px',
+              height: '34px',
               border: 'none',
-              borderBottom: '1px solid #ECE7E1',
+              borderBottom: '1px solid #E2E8F0',
               backgroundColor: '#FFFFFF',
-              color: '#2D3139',
+              color: '#1E293B',
               fontSize: '18px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -904,11 +982,11 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             onClick={() => setZoom((z) => Math.max(0.4, Number((z * 0.85).toFixed(2))))}
             title="Zoom Out"
             style={{
-              width: '40px',
-              height: '36px',
+              width: '38px',
+              height: '34px',
               border: 'none',
               backgroundColor: '#FFFFFF',
-              color: '#2D3139',
+              color: '#1E293B',
               fontSize: '18px',
               fontWeight: 700,
               cursor: 'pointer',
@@ -922,19 +1000,21 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
         </div>
       </div>
 
-      {/* PopSpace Bottom Action Bar (Quick Add & Proximity Audio) */}
+      {/* Modern Bottom Action Dock (Add Content & Proximity Audio) */}
       <div
+        className="ui-interactive"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
         style={{
           position: 'fixed',
-          bottom: '24px',
+          bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 90,
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
+          gap: '8px',
+          maxWidth: 'calc(100vw - 32px)',
         }}
       >
         <div style={{ position: 'relative' }}>
@@ -943,21 +1023,21 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '8px',
-              padding: '10px 18px',
+              gap: '6px',
+              padding: '9px 16px',
               borderRadius: '999px',
-              backgroundColor: isAddMenuOpen ? '#F4F5F8' : '#FFFFFF',
-              border: '1px solid #ECE7E1',
-              boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
-              color: '#2D3139',
+              backgroundColor: isAddMenuOpen ? '#F1F5F9' : '#FFFFFF',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 16px rgba(15, 23, 42, 0.08)',
+              color: '#0F172A',
               fontSize: '13px',
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
             }}
           >
-            <Plus size={16} />
-            <span>Add Content</span>
+            <Plus size={15} />
+            <span>Add<span className="hidden sm:inline"> Content</span></span>
           </button>
 
           {/* Add Content Popover Menu */}
@@ -965,13 +1045,13 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             <div
               style={{
                 position: 'absolute',
-                bottom: '54px',
+                bottom: '50px',
                 left: 0,
-                width: '210px',
+                width: '200px',
                 backgroundColor: '#FFFFFF',
                 borderRadius: '16px',
-                border: '1px solid #ECE7E1',
-                boxShadow: '0 12px 32px rgba(60, 50, 40, 0.14)',
+                border: '1px solid #E2E8F0',
+                boxShadow: '0 12px 32px rgba(15, 23, 42, 0.12)',
                 padding: '6px',
                 display: 'flex',
                 flexDirection: 'column',
@@ -993,17 +1073,17 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
                   borderRadius: '10px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: '#2D3139',
+                  color: '#1E293B',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   textAlign: 'left',
                   width: '100%',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FBF9F6')}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <StickyNote size={16} color="#F1A41D" />
+                <StickyNote size={15} color="#D97706" />
                 <span>Sticky Note</span>
               </button>
 
@@ -1021,21 +1101,21 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
                   borderRadius: '10px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: '#2D3139',
+                  color: '#1E293B',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   textAlign: 'left',
                   width: '100%',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FBF9F6')}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <PlaySquare size={16} color="#EE6659" />
+                <PlaySquare size={15} color="#EF4444" />
                 <span>YouTube Player</span>
               </button>
 
-              <div style={{ height: 1, backgroundColor: '#ECE7E1', margin: '4px 6px' }} />
+              <div style={{ height: 1, backgroundColor: '#E2E8F0', margin: '4px 6px' }} />
 
               {/* Room Templates */}
               <button
@@ -1051,18 +1131,18 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
                   borderRadius: '10px',
                   border: 'none',
                   backgroundColor: 'transparent',
-                  color: '#2D3139',
+                  color: '#1E293B',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   textAlign: 'left',
                   width: '100%',
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FBF9F6')}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F8FAFC')}
                 onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
               >
-                <LayoutTemplate size={16} color="#6259BE" />
-                <span>Room Templates...</span>
+                <LayoutTemplate size={15} color="#4F46E5" />
+                <span>Room Layouts...</span>
               </button>
             </div>
           )}
@@ -1070,16 +1150,16 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
 
         <button
           onClick={handleAddSticky}
+          className="hidden md:flex"
           style={{
-            display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '10px 16px',
+            padding: '9px 16px',
             borderRadius: '999px',
             backgroundColor: '#FFFFFF',
-            border: '1px solid #ECE7E1',
-            boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
-            color: '#2D3139',
+            border: '1px solid #E2E8F0',
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.08)',
+            color: '#1E293B',
             fontSize: '13px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -1095,19 +1175,20 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            padding: '10px 16px',
+            padding: '9px 16px',
             borderRadius: '999px',
-            backgroundColor: isGlobalAudio ? '#FFF5DD' : '#FFFFFF',
-            border: `1px solid ${isGlobalAudio ? '#F1A41D' : '#ECE7E1'}`,
-            boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
-            color: isGlobalAudio ? '#7C4F00' : '#575F75',
+            backgroundColor: isGlobalAudio ? '#EEF2FF' : '#FFFFFF',
+            border: `1px solid ${isGlobalAudio ? '#4F46E5' : '#E2E8F0'}`,
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.08)',
+            color: isGlobalAudio ? '#4338CA' : '#475569',
             fontSize: '13px',
             fontWeight: 600,
             cursor: 'pointer',
+            whiteSpace: 'nowrap',
           }}
         >
-          <Radio size={14} color={isGlobalAudio ? '#7C4F00' : '#575F75'} />
-          <span>{isGlobalAudio ? 'Global Audio' : 'Nearby Audio'}</span>
+          <Radio size={14} color={isGlobalAudio ? '#4F46E5' : '#64748B'} />
+          <span>{isGlobalAudio ? 'Global' : 'Nearby'}<span className="hidden sm:inline"> Audio</span></span>
         </button>
       </div>
 

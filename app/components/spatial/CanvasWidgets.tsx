@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { CanvasWidget, StickyNoteWidget, YouTubeWidget, ScreenShareWidget } from './types';
 import { Participant, Track } from 'livekit-client';
-import { Trash2, Move, Maximize2, Sparkles, PlaySquare } from 'lucide-react';
+import { Trash2, PlaySquare } from 'lucide-react';
 
 interface WidgetLayerProps {
   widgets: CanvasWidget[];
@@ -11,14 +11,15 @@ interface WidgetLayerProps {
   onDeleteWidget: (id: string) => void;
   remoteParticipants: Participant[];
   localParticipant: Participant;
+  zoom?: number;
 }
 
 const PASTEL_COLORS = {
-  mandarin: { bg: '#FFF5DD', border: '#F1A41D', text: '#7C4F00' },
-  lavender: { bg: '#F3F2FE', border: '#9993EB', text: '#6259BE' },
-  oregano: { bg: '#E4FBF8', border: '#70BBB2', text: '#00786D' },
-  cherry: { bg: '#FDEEEC', border: '#EE6659', text: '#9C2F08' },
-  blueberry: { bg: '#EEF8FF', border: '#65B2E2', text: '#106CB0' },
+  mandarin: { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E' },
+  lavender: { bg: '#F5F3FF', border: '#DDD6FE', text: '#5B21B6' },
+  oregano: { bg: '#ECFDF5', border: '#A7F3D0', text: '#065F46' },
+  cherry: { bg: '#FFF1F2', border: '#FECDD3', text: '#9F1239' },
+  blueberry: { bg: '#F0F9FF', border: '#BAE6FD', text: '#0369A1' },
 };
 
 export const CanvasWidgetsLayer: React.FC<WidgetLayerProps> = ({
@@ -27,6 +28,7 @@ export const CanvasWidgetsLayer: React.FC<WidgetLayerProps> = ({
   onDeleteWidget,
   remoteParticipants,
   localParticipant,
+  zoom = 1,
 }) => {
   return (
     <>
@@ -38,6 +40,7 @@ export const CanvasWidgetsLayer: React.FC<WidgetLayerProps> = ({
               widget={widget}
               onUpdate={onUpdateWidget}
               onDelete={onDeleteWidget}
+              zoom={zoom}
             />
           );
         }
@@ -48,6 +51,7 @@ export const CanvasWidgetsLayer: React.FC<WidgetLayerProps> = ({
               widget={widget}
               onUpdate={onUpdateWidget}
               onDelete={onDeleteWidget}
+              zoom={zoom}
             />
           );
         }
@@ -63,6 +67,7 @@ export const CanvasWidgetsLayer: React.FC<WidgetLayerProps> = ({
               participant={participant}
               onDelete={onDeleteWidget}
               onUpdate={onUpdateWidget}
+              zoom={zoom}
             />
           );
         }
@@ -77,10 +82,12 @@ function StickyNoteItem({
   widget,
   onUpdate,
   onDelete,
+  zoom = 1,
 }: {
   widget: StickyNoteWidget;
   onUpdate: (id: string, updates: Partial<CanvasWidget>) => void;
   onDelete: (id: string) => void;
+  zoom?: number;
 }) {
   const [text, setText] = useState(widget.text);
   const [isDragging, setIsDragging] = useState(false);
@@ -102,8 +109,8 @@ function StickyNoteItem({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging || !dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
+    const dx = (e.clientX - dragRef.current.startX) / zoom;
+    const dy = (e.clientY - dragRef.current.startY) / zoom;
     onUpdate(widget.id, {
       x: Math.round(dragRef.current.widgetX + dx),
       y: Math.round(dragRef.current.widgetY + dy),
@@ -122,6 +129,9 @@ function StickyNoteItem({
 
   return (
     <div
+      className="ui-interactive"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
         left: widget.x,
@@ -129,13 +139,13 @@ function StickyNoteItem({
         width: 250,
         minHeight: 180,
         backgroundColor: colors.bg,
-        border: `1px solid ${colors.border}`,
+        border: `1.5px solid ${colors.border}`,
         borderRadius: '16px',
         boxShadow: isDragging
-          ? '0 18px 36px rgba(60, 50, 40, 0.16), 0 4px 10px rgba(0,0,0,0.06)'
-          : '0 8px 24px rgba(60, 50, 40, 0.08), 0 2px 6px rgba(0,0,0,0.04)',
+          ? '0 20px 40px rgba(15, 23, 42, 0.16), 0 4px 10px rgba(0,0,0,0.06)'
+          : '0 8px 24px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(0,0,0,0.04)',
         zIndex: isDragging ? 50 : 20,
-        padding: '14px 16px',
+        padding: '12px 14px',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
@@ -151,16 +161,19 @@ function StickyNoteItem({
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: isDragging ? 'grabbing' : 'grab',
-          paddingBottom: '8px',
+          paddingBottom: '6px',
           borderBottom: '1px solid rgba(0,0,0,0.06)',
+          touchAction: 'none',
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.text }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: colors.border }} />
-          <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.02em' }}>Note</span>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: colors.text }} />
+          <span style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            Note
+          </span>
         </div>
         <button
           onClick={(e) => {
@@ -172,7 +185,7 @@ function StickyNoteItem({
             border: 'none',
             cursor: 'pointer',
             padding: '4px',
-            color: '#949CBA',
+            color: '#94A3B8',
             borderRadius: '6px',
             display: 'flex',
             alignItems: 'center',
@@ -181,7 +194,7 @@ function StickyNoteItem({
           }}
           title="Delete note"
         >
-          <Trash2 size={14} />
+          <Trash2 size={13} />
         </button>
       </div>
 
@@ -203,8 +216,10 @@ function StickyNoteItem({
           fontFamily: 'inherit',
           fontSize: '14px',
           lineHeight: '1.5',
-          color: '#2D3139',
+          color: '#1E293B',
           fontWeight: 500,
+          userSelect: 'auto',
+          touchAction: 'auto',
         }}
       />
     </div>
@@ -216,10 +231,12 @@ function YouTubeItem({
   widget,
   onUpdate,
   onDelete,
+  zoom = 1,
 }: {
   widget: YouTubeWidget;
   onUpdate: (id: string, updates: Partial<CanvasWidget>) => void;
   onDelete: (id: string) => void;
+  zoom?: number;
 }) {
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; widgetX: number; widgetY: number } | null>(null);
@@ -238,8 +255,8 @@ function YouTubeItem({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging || !dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
+    const dx = (e.clientX - dragRef.current.startX) / zoom;
+    const dy = (e.clientY - dragRef.current.startY) / zoom;
     onUpdate(widget.id, {
       x: Math.round(dragRef.current.widgetX + dx),
       y: Math.round(dragRef.current.widgetY + dy),
@@ -258,6 +275,9 @@ function YouTubeItem({
 
   return (
     <div
+      className="ui-interactive"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
         left: widget.x,
@@ -266,9 +286,9 @@ function YouTubeItem({
         backgroundColor: '#FFFFFF',
         borderRadius: '16px',
         boxShadow: isDragging
-          ? '0 20px 40px rgba(60, 50, 40, 0.2)'
-          : '0 8px 24px rgba(60, 50, 40, 0.1)',
-        border: '1px solid #EAE5DF',
+          ? '0 20px 40px rgba(15, 23, 42, 0.2)'
+          : '0 8px 24px rgba(15, 23, 42, 0.1)',
+        border: '1px solid #E2E8F0',
         overflow: 'hidden',
         zIndex: isDragging ? 50 : 20,
         display: 'flex',
@@ -282,8 +302,8 @@ function YouTubeItem({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 12px',
-          backgroundColor: '#FFF8F0',
-          borderBottom: '1px solid #EAE5DF',
+          backgroundColor: '#F8FAFC',
+          borderBottom: '1px solid #E2E8F0',
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'none',
         }}
@@ -292,8 +312,8 @@ function YouTubeItem({
         onPointerUp={handlePointerUp}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <PlaySquare size={15} color="#EE6659" />
-          <span style={{ fontSize: '12px', fontWeight: 600, color: '#2D3139' }}>Shared Player</span>
+          <PlaySquare size={15} color="#EF4444" />
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#1E293B' }}>Shared Media</span>
         </div>
         <button
           onClick={() => onDelete(widget.id)}
@@ -302,7 +322,7 @@ function YouTubeItem({
             border: 'none',
             cursor: 'pointer',
             padding: '3px',
-            color: '#949CBA',
+            color: '#94A3B8',
             borderRadius: '4px',
           }}
         >
@@ -337,11 +357,13 @@ function ScreenShareItem({
   participant,
   onDelete,
   onUpdate,
+  zoom = 1,
 }: {
   widget: ScreenShareWidget;
   participant?: Participant;
   onDelete: (id: string) => void;
   onUpdate: (id: string, updates: Partial<CanvasWidget>) => void;
+  zoom?: number;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -374,8 +396,8 @@ function ScreenShareItem({
 
   const handlePointerMove = (e: React.PointerEvent) => {
     if (!isDragging || !dragRef.current) return;
-    const dx = e.clientX - dragRef.current.startX;
-    const dy = e.clientY - dragRef.current.startY;
+    const dx = (e.clientX - dragRef.current.startX) / zoom;
+    const dy = (e.clientY - dragRef.current.startY) / zoom;
     onUpdate(widget.id, {
       x: Math.round(dragRef.current.widgetX + dx),
       y: Math.round(dragRef.current.widgetY + dy),
@@ -394,6 +416,9 @@ function ScreenShareItem({
 
   return (
     <div
+      className="ui-interactive"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
         left: widget.x,
@@ -402,9 +427,9 @@ function ScreenShareItem({
         backgroundColor: '#FFFFFF',
         borderRadius: '16px',
         boxShadow: isDragging
-          ? '0 20px 40px rgba(60, 50, 40, 0.2)'
-          : '0 8px 24px rgba(60, 50, 40, 0.1)',
-        border: '1.5px solid #EAE5DF',
+          ? '0 20px 40px rgba(15, 23, 42, 0.2)'
+          : '0 8px 24px rgba(15, 23, 42, 0.1)',
+        border: '1.5px solid #E2E8F0',
         overflow: 'hidden',
         zIndex: isDragging ? 50 : 20,
         display: 'flex',
@@ -417,8 +442,8 @@ function ScreenShareItem({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '8px 12px',
-          backgroundColor: '#F4F5F8',
-          borderBottom: '1px solid #EAE5DF',
+          backgroundColor: '#F8FAFC',
+          borderBottom: '1px solid #E2E8F0',
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'none',
         }}
@@ -426,7 +451,7 @@ function ScreenShareItem({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <span style={{ fontSize: '12px', fontWeight: 600, color: '#2D3139' }}>
+        <span style={{ fontSize: '12px', fontWeight: 600, color: '#1E293B' }}>
           Screen: {participant?.name || widget.participantIdentity}
         </span>
         <button
@@ -436,7 +461,7 @@ function ScreenShareItem({
             border: 'none',
             cursor: 'pointer',
             padding: '3px',
-            color: '#949CBA',
+            color: '#94A3B8',
             borderRadius: '4px',
           }}
         >

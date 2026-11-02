@@ -42,7 +42,7 @@ export const TEMPLATES: TemplateDefinition[] = [
         type: 'sticky',
         x: cx - 125,
         y: cy + 50,
-        text: '✨ Customer Feedback\n• Loving the cute avatars!',
+        text: '✨ Customer Feedback\n• Loving the fast spatial audio!',
         color: 'lavender',
         creatorId: 'template',
       },
@@ -220,30 +220,32 @@ export const MeetingTemplatesModal: React.FC<MeetingTemplatesModalProps> = ({
 
   return (
     <div
+      className="ui-interactive modal-backdrop"
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(45, 49, 57, 0.4)',
+        backgroundColor: 'rgba(15, 23, 42, 0.45)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         zIndex: 200,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '20px',
+        padding: '16px',
       }}
       onClick={onClose}
     >
       <div
+        className="ui-interactive"
         style={{
           width: '100%',
           maxWidth: '720px',
           maxHeight: '85vh',
           backgroundColor: '#FFFFFF',
           borderRadius: '24px',
-          padding: '28px',
-          boxShadow: '0 24px 64px rgba(60, 50, 40, 0.2)',
-          border: '1px solid #EAE5DF',
+          padding: '24px',
+          boxShadow: '0 24px 64px rgba(15, 23, 42, 0.2)',
+          border: '1px solid #E2E8F0',
           display: 'flex',
           flexDirection: 'column',
           overflowY: 'auto',

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { POPSPACE_AVATARS, AvatarMeta, getRandomAvatar } from './avatarMetadata';
+import { EXECUTIVE_THEMES, AvatarMeta, getInitials } from './avatarMetadata';
 import { Avatar } from './Avatar';
 import { AvatarAnimationState } from './AvatarAnimator';
-import { Mic, MicOff, Video, VideoOff, Sparkles, ArrowRight } from 'lucide-react';
+import { Mic, MicOff, Video, VideoOff, ShieldCheck, ArrowRight } from 'lucide-react';
 
 interface PopSpacePreJoinProps {
   roomName: string;
@@ -18,7 +18,7 @@ interface PopSpacePreJoinProps {
 }
 
 export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJoin }) => {
-  const [selectedAvatar, setSelectedAvatar] = useState<AvatarMeta>(() => getRandomAvatar());
+  const [selectedTheme, setSelectedTheme] = useState<AvatarMeta>(EXECUTIVE_THEMES[0]);
   const [username, setUsername] = useState('');
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(false);
@@ -67,53 +67,56 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const finalName = username.trim() || selectedAvatar.label;
+    const finalName = username.trim() || 'Guest Member';
     onJoin({
       username: finalName,
-      avatarId: selectedAvatar.id,
-      avatarBgColor: selectedAvatar.bgColor,
+      avatarId: selectedTheme.id,
+      avatarBgColor: selectedTheme.bgColor,
       videoEnabled: isVideoOn,
       audioEnabled: isMicOn,
     });
   };
 
+  const initials = getInitials(username || 'Morrow');
+
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         width: '100vw',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#FFF8F0', // PopSpace warm paper background
-        padding: '20px',
+        backgroundColor: '#F8FAFC',
+        padding: '16px',
         position: 'relative',
         overflow: 'hidden',
+        boxSizing: 'border-box',
       }}
     >
-      {/* Background Dot Grid */}
+      {/* Subtle background mesh */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          backgroundImage: 'radial-gradient(#D4CEBA 1.2px, transparent 1.2px)',
-          backgroundSize: '32px 32px',
-          opacity: 0.5,
+          backgroundImage: 'radial-gradient(#CBD5E1 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+          opacity: 0.6,
           pointerEvents: 'none',
         }}
       />
 
-      {/* Main Drop-In Card */}
+      {/* Main Join Card */}
       <div
         style={{
           position: 'relative',
           width: '100%',
-          maxWidth: '460px',
+          maxWidth: '430px',
           backgroundColor: '#FFFFFF',
           borderRadius: '24px',
-          padding: '32px 28px',
-          boxShadow: '0 16px 48px rgba(60, 50, 40, 0.12), 0 2px 6px rgba(0,0,0,0.04)',
-          border: '1px solid #EAE5DF',
+          padding: '28px 24px',
+          boxShadow: '0 20px 48px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03)',
+          border: '1px solid #E2E8F0',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -126,46 +129,56 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
             display: 'inline-flex',
             alignItems: 'center',
             gap: '6px',
-            backgroundColor: '#FFF5DD',
-            color: '#7C4F00',
-            fontSize: '12px',
+            backgroundColor: '#EEF2FF',
+            color: '#4338CA',
+            fontSize: '11px',
             fontWeight: 700,
             padding: '4px 12px',
             borderRadius: '999px',
-            marginBottom: '16px',
+            marginBottom: '14px',
             textTransform: 'uppercase',
             letterSpacing: '0.04em',
           }}
         >
-          <Sparkles size={13} color="#F1A41D" />
-          <span>Space: {roomName}</span>
+          <ShieldCheck size={13} color="#4F46E5" />
+          <span>Room: {roomName}</span>
         </div>
 
-        <h2
+        <h1
           style={{
-            fontSize: '24px',
+            fontSize: '22px',
             fontWeight: 800,
-            color: '#2D3139',
+            color: '#0F172A',
             letterSpacing: '-0.02em',
+            margin: '0 0 6px 0',
+            textAlign: 'center',
+          }}
+        >
+          Ready to join?
+        </h1>
+        <p
+          style={{
+            fontSize: '13px',
+            color: '#64748B',
             margin: '0 0 20px 0',
             textAlign: 'center',
           }}
         >
-          Choose your look
-        </h2>
+          Check your camera, microphone, and presence
+        </p>
 
-        {/* Avatar / Camera Preview Bubble */}
+        {/* Live Preview Bubble */}
         <div
           style={{
             position: 'relative',
-            width: '120px',
-            height: '120px',
+            width: '104px',
+            height: '104px',
             borderRadius: '50%',
             overflow: 'hidden',
-            backgroundColor: selectedAvatar.bgColor,
-            border: '4px solid #FFFFFF',
-            boxShadow: '0 10px 28px rgba(60, 50, 40, 0.14)',
-            marginBottom: '16px',
+            backgroundColor: '#0F172A',
+            border: '3px solid #FFFFFF',
+            boxShadow: '0 12px 30px rgba(15, 23, 42, 0.15)',
+            marginBottom: '14px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -185,12 +198,17 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
               }}
             />
           ) : (
-            <Avatar name={selectedAvatar.id} size={110} animation={AvatarAnimationState.Idle} />
+            <Avatar
+              name={selectedTheme.id}
+              initials={initials}
+              size={104}
+              animation={AvatarAnimationState.Idle}
+            />
           )}
         </div>
 
         {/* Quick Mic / Cam Preview Toggles */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
           <button
             type="button"
             onClick={() => setIsMicOn(!isMicOn)}
@@ -198,18 +216,19 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 14px',
+              padding: '7px 14px',
               borderRadius: '999px',
-              border: 'none',
-              backgroundColor: isMicOn ? '#F4F5F8' : '#FDEEEC',
-              color: isMicOn ? '#2D3139' : '#EE6659',
+              border: `1px solid ${isMicOn ? '#E2E8F0' : '#FCA5A5'}`,
+              backgroundColor: isMicOn ? '#F8FAFC' : '#FEF2F2',
+              color: isMicOn ? '#334155' : '#EF4444',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             {isMicOn ? <Mic size={14} /> : <MicOff size={14} />}
-            <span>{isMicOn ? 'Mic On' : 'Mic Off'}</span>
+            <span>{isMicOn ? 'Mic On' : 'Muted'}</span>
           </button>
 
           <button
@@ -219,14 +238,15 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '6px 14px',
+              padding: '7px 14px',
               borderRadius: '999px',
-              border: 'none',
-              backgroundColor: isVideoOn ? '#F4F5F8' : '#FDEEEC',
-              color: isVideoOn ? '#2D3139' : '#EE6659',
+              border: `1px solid ${isVideoOn ? '#C7D2FE' : '#E2E8F0'}`,
+              backgroundColor: isVideoOn ? '#EEF2FF' : '#F8FAFC',
+              color: isVideoOn ? '#4F46E5' : '#334155',
               fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
+              transition: 'all 0.15s ease',
             }}
           >
             {isVideoOn ? <Video size={14} /> : <VideoOff size={14} />}
@@ -234,101 +254,97 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Character Selector Horizontal Scroll */}
-          <div style={{ width: '100%' }}>
-            <label
-              style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: '#575F75',
-                textTransform: 'uppercase',
-                letterSpacing: '0.04em',
-                marginBottom: '8px',
-              }}
-            >
-              Select Character
-            </label>
-            <div
-              style={{
-                display: 'flex',
-                gap: '10px',
-                overflowX: 'auto',
-                paddingBottom: '8px',
-                scrollSnapType: 'x mandatory',
-                scrollbarWidth: 'none',
-              }}
-            >
-              {POPSPACE_AVATARS.slice(0, 15).map((av) => {
-                const isSelected = av.id === selectedAvatar.id;
-                return (
-                  <button
-                    key={av.id}
-                    type="button"
-                    onClick={() => setSelectedAvatar(av)}
-                    style={{
-                      flex: '0 0 auto',
-                      width: '52px',
-                      height: '52px',
-                      borderRadius: '50%',
-                      backgroundColor: av.bgColor,
-                      border: isSelected ? '3px solid #F1A41D' : '2px solid transparent',
-                      boxShadow: isSelected ? '0 4px 12px rgba(241, 164, 29, 0.4)' : 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      overflow: 'hidden',
-                      transform: isSelected ? 'scale(1.1)' : 'scale(1)',
-                      transition: 'all 0.15s ease',
-                    }}
-                    title={av.label}
-                  >
-                    <Avatar name={av.id} size={48} animation={AvatarAnimationState.Idle} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
+        {/* Join Form */}
+        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
           {/* Name Input */}
           <div style={{ width: '100%' }}>
             <label
               style={{
                 display: 'block',
-                fontSize: '12px',
+                fontSize: '11px',
                 fontWeight: 700,
-                color: '#575F75',
+                color: '#475569',
                 textTransform: 'uppercase',
                 letterSpacing: '0.04em',
-                marginBottom: '8px',
+                marginBottom: '6px',
               }}
             >
               Your Name
             </label>
             <input
               type="text"
-              placeholder={`e.g. ${selectedAvatar.label}`}
+              placeholder="e.g. Emmanuel Enyi"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               style={{
                 width: '100%',
                 padding: '12px 16px',
-                backgroundColor: '#F4F5F8',
-                border: '1px solid #EAE5DF',
+                backgroundColor: '#F8FAFC',
+                border: '1.5px solid #E2E8F0',
                 borderRadius: '12px',
-                fontSize: '15px',
+                fontSize: '16px', // Prevents iOS Safari auto-zoom
+                color: '#0F172A',
                 fontWeight: 600,
-                color: '#2D3139',
                 outline: 'none',
+                boxSizing: 'border-box',
+                transition: 'border-color 0.15s ease',
               }}
+              onFocus={(e) => (e.target.style.borderColor = '#4F46E5')}
+              onBlur={(e) => (e.target.style.borderColor = '#E2E8F0')}
             />
           </div>
 
-          {/* Enter Space Button */}
+          {/* Theme Color Selector */}
+          <div style={{ width: '100%' }}>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+                marginBottom: '6px',
+              }}
+            >
+              Presence Theme
+            </label>
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                justifyContent: 'center',
+                alignItems: 'center',
+                padding: '4px 0',
+              }}
+            >
+              {EXECUTIVE_THEMES.map((th) => {
+                const isSelected = th.id === selectedTheme.id;
+                return (
+                  <button
+                    key={th.id}
+                    type="button"
+                    onClick={() => setSelectedTheme(th)}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: th.gradient || th.bgColor,
+                      border: isSelected ? '2.5px solid #0F172A' : '2px solid transparent',
+                      boxShadow: isSelected ? '0 0 0 2px #FFFFFF, 0 4px 10px rgba(0,0,0,0.15)' : 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                      transform: isSelected ? 'scale(1.15)' : 'scale(1)',
+                      transition: 'all 0.15s ease',
+                    }}
+                    title={th.label}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Submit CTA */}
           <button
             type="submit"
             style={{
@@ -337,21 +353,23 @@ export const PopSpacePreJoin: React.FC<PopSpacePreJoinProps> = ({ roomName, onJo
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              padding: '14px',
-              backgroundColor: '#F1A41D',
-              color: '#FFFFFF',
+              padding: '13px',
+              borderRadius: '12px',
               border: 'none',
-              borderRadius: '999px',
-              fontSize: '15px',
+              backgroundColor: '#0F172A',
+              color: '#FFFFFF',
+              fontSize: '14px',
               fontWeight: 700,
               cursor: 'pointer',
-              boxShadow: '0 6px 18px rgba(241, 164, 29, 0.35)',
-              marginTop: '8px',
-              transition: 'all 0.15s ease',
+              marginTop: '4px',
+              boxShadow: '0 8px 20px rgba(15, 23, 42, 0.15)',
+              transition: 'background-color 0.15s ease, transform 0.1s ease',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1E293B')}
+            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#0F172A')}
           >
-            <span>Enter Space</span>
-            <ArrowRight size={18} />
+            <span>Enter Meeting Room</span>
+            <ArrowRight size={16} />
           </button>
         </form>
       </div>

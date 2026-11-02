@@ -5,6 +5,7 @@ import { Participant, Track } from 'livekit-client';
 import { useIsSpeaking } from '@livekit/components-react';
 import { Avatar } from './Avatar';
 import { AvatarAnimationState } from './AvatarAnimator';
+import { getInitials } from './avatarMetadata';
 import { MicOff, Volume2 } from 'lucide-react';
 
 interface PopSpacePersonBubbleProps {
@@ -27,8 +28,8 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
   x,
   y,
   name,
-  avatarId = 'avocado',
-  avatarBgColor = '#FFF5DD',
+  avatarId = 'indigo',
+  avatarBgColor = '#4F46E5',
   isDragging = false,
   onPointerDown,
   showRangeRing = false,
@@ -81,10 +82,15 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
     };
   }, [participant]);
 
-  const bubbleSize = 98; // PopSpace avatar size
+  // Executive presence bubble dimensions
+  const bubbleSize = 82;
+
+  const initials = getInitials(name);
 
   return (
     <div
+      className="ui-interactive"
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: 'absolute',
         left: 0,
@@ -101,7 +107,7 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
       }}
       onPointerDown={onPointerDown}
     >
-      {/* PopSpace Proximity Earshot Ring */}
+      {/* Earshot range ring for proximity audio */}
       {showRangeRing && (
         <div
           style={{
@@ -109,25 +115,25 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
             left: '50%',
             top: '50%',
             transform: 'translate(-50%, -50%)',
-            width: 750 * 2,
-            height: 750 * 2,
+            width: 700 * 2,
+            height: 700 * 2,
             borderRadius: '50%',
-            border: '2px dashed rgba(241, 164, 29, 0.22)',
-            background: 'radial-gradient(circle, rgba(255, 234, 182, 0.08) 0%, rgba(255, 234, 182, 0) 70%)',
+            border: '1.5px dashed rgba(79, 70, 229, 0.18)',
+            background: 'radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, rgba(79, 70, 229, 0) 70%)',
             pointerEvents: 'none',
             zIndex: -1,
           }}
         />
       )}
 
-      {/* PopSpace Speaking Ripple Aura */}
+      {/* Speaking Indicator Pulse */}
       {isSpeaking && (
         <div
           style={{
             position: 'absolute',
-            inset: -8,
+            inset: -6,
             borderRadius: '50%',
-            background: 'rgba(153, 147, 235, 0.35)',
+            background: 'rgba(16, 185, 129, 0.25)',
             animation: 'spatialPulse 1.4s ease-out infinite',
             zIndex: 0,
             pointerEvents: 'none',
@@ -143,22 +149,22 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
           height: '100%',
           borderRadius: '50%',
           overflow: 'hidden',
-          backgroundColor: avatarBgColor,
+          backgroundColor: '#0F172A',
           border: isSpeaking
-            ? '3.5px solid #9993EB'
+            ? '3px solid #10B981'
             : isLocal
-            ? '3px solid #F1A41D'
-            : '2.5px solid #FFFFFF',
+            ? '3px solid #4F46E5'
+            : '2px solid rgba(255, 255, 255, 0.85)',
           boxShadow: isSpeaking
-            ? '0 10px 28px rgba(153, 147, 235, 0.35), 0 2px 6px rgba(0,0,0,0.06)'
-            : '0 8px 22px rgba(60, 50, 40, 0.12), 0 2px 4px rgba(0,0,0,0.04)',
+            ? '0 0 0 4px rgba(16, 185, 129, 0.25), 0 8px 24px rgba(0, 0, 0, 0.15)'
+            : '0 8px 24px rgba(30, 41, 59, 0.12), 0 2px 6px rgba(0, 0, 0, 0.06)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 1,
         }}
       >
-        {/* Live Video Camera when Enabled */}
+        {/* Live Camera Feed */}
         <video
           ref={videoRef}
           autoPlay
@@ -173,38 +179,18 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
           }}
         />
 
-        {/* PopSpace Animated Character Sprite when Camera is Off */}
+        {/* Executive Monogram Avatar when Camera is Off */}
         {!hasVideo && (
           <Avatar
             name={avatarId}
-            size={bubbleSize - 4}
+            initials={initials}
+            size={bubbleSize}
             animation={isSpeaking ? AvatarAnimationState.Talking : AvatarAnimationState.Idle}
           />
         )}
-
-        {/* Local "YOU" badge */}
-        {isLocal && (
-          <div
-            style={{
-              position: 'absolute',
-              top: 5,
-              backgroundColor: '#F1A41D',
-              color: '#FFFFFF',
-              fontSize: '9px',
-              fontWeight: 800,
-              padding: '1px 7px',
-              borderRadius: '999px',
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.15)',
-            }}
-          >
-            You
-          </div>
-        )}
       </div>
 
-      {/* PopSpace Name Pill with Audio Meter */}
+      {/* Sleek Professional Name Pill with Status */}
       <div
         style={{
           position: 'absolute',
@@ -212,37 +198,37 @@ export const PopSpacePersonBubble: React.FC<PopSpacePersonBubbleProps> = ({
           left: '50%',
           transform: 'translateX(-50%)',
           backgroundColor: '#FFFFFF',
-          padding: '4px 11px',
+          padding: '3px 10px',
           borderRadius: '999px',
-          boxShadow: '0 2px 8px rgba(60, 50, 40, 0.1)',
-          border: '1px solid #EAE5DF',
+          boxShadow: '0 2px 10px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04)',
+          border: '1px solid #E2E8F0',
           display: 'flex',
           alignItems: 'center',
           gap: '5px',
           whiteSpace: 'nowrap',
-          maxWidth: '150px',
+          maxWidth: '140px',
         }}
       >
         <span
           style={{
-            fontSize: '12px',
+            fontSize: '11px',
             fontWeight: 700,
-            color: '#2D3139',
+            color: '#1E293B',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
           }}
         >
-          {name}
+          {isLocal ? `${name} (You)` : name}
         </span>
 
         {isMuted ? (
-          <MicOff size={11} color="#EE6659" strokeWidth={2.5} />
+          <MicOff size={11} color="#EF4444" strokeWidth={2.5} />
         ) : (
-          <Volume2 size={11} color="#70BBB2" strokeWidth={2.5} />
+          <Volume2 size={11} color="#10B981" strokeWidth={2.5} />
         )}
 
         {!isLocal && volumePercent !== undefined && volumePercent < 100 && (
-          <span style={{ fontSize: '10px', color: '#949CBA', fontWeight: 600 }}>
+          <span style={{ fontSize: '9px', color: '#64748B', fontWeight: 600 }}>
             {volumePercent}%
           </span>
         )}

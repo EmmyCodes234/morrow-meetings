@@ -98,37 +98,46 @@ export default function Page() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         width: '100vw',
-        backgroundColor: '#FFF8F0',
-        backgroundImage: 'radial-gradient(#D4CEBA 1.2px, transparent 1.2px)',
-        backgroundSize: '32px 32px',
-        color: '#2D3139',
+        backgroundColor: '#F8FAFC',
+        backgroundImage: 'radial-gradient(#CBD5E1 1.2px, transparent 1.2px)',
+        backgroundSize: '28px 28px',
+        color: '#0F172A',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        padding: '32px 20px 80px',
+        padding: '24px 16px 80px',
         position: 'relative',
         boxSizing: 'border-box',
       }}
     >
-      {/* Top Header with PopSpace Logo */}
+      {/* Top Header with Morrow Logo */}
       <header
         style={{
           width: '100%',
           maxWidth: '1100px',
           display: 'flex',
           justifyContent: 'center',
-          marginBottom: '32px',
-          paddingTop: '16px',
+          marginBottom: '28px',
+          paddingTop: '12px',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <img
-            src="/logo.svg"
-            alt="PopSpace logo"
-            style={{ height: '22px', width: 'auto', display: 'block' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div
+            style={{
+              width: '12px',
+              height: '12px',
+              borderRadius: '50%',
+              backgroundColor: '#4F46E5',
+            }}
           />
+          <span style={{ fontSize: '18px', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em' }}>
+            Morrow
+          </span>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: '#64748B', backgroundColor: '#EEF2FF', padding: '2px 8px', borderRadius: '999px' }}>
+            Spaces
+          </span>
         </div>
       </header>
 
@@ -137,7 +146,7 @@ export default function Page() {
         style={{
           textAlign: 'center',
           maxWidth: '680px',
-          marginBottom: '28px',
+          marginBottom: '24px',
         }}
       >
         <h1
@@ -145,7 +154,7 @@ export default function Page() {
             fontSize: 'clamp(26px, 5vw, 36px)',
             fontWeight: 800,
             letterSpacing: '-0.02em',
-            color: '#2D3139',
+            color: '#0F172A',
             marginBottom: '10px',
             lineHeight: 1.2,
           }}
@@ -155,7 +164,7 @@ export default function Page() {
         <p
           style={{
             fontSize: '15px',
-            color: '#656974',
+            color: '#64748B',
             lineHeight: 1.5,
             margin: '0 auto',
             maxWidth: '520px',
@@ -170,15 +179,15 @@ export default function Page() {
         onSubmit={handleJoin}
         style={{
           width: '100%',
-          maxWidth: '480px',
+          maxWidth: '460px',
           display: 'flex',
           alignItems: 'center',
           backgroundColor: '#FFFFFF',
           borderRadius: '999px',
-          padding: '6px 8px 6px 18px',
-          border: '1px solid #EAE5DF',
-          boxShadow: '0 4px 20px rgba(60, 50, 40, 0.06)',
-          marginBottom: '40px',
+          padding: '6px 8px 6px 16px',
+          border: '1.5px solid #E2E8F0',
+          boxShadow: '0 4px 20px rgba(15, 23, 42, 0.06)',
+          marginBottom: '36px',
         }}
       >
         <input
@@ -190,8 +199,8 @@ export default function Page() {
             flex: 1,
             border: 'none',
             outline: 'none',
-            fontSize: '14px',
-            color: '#2D3139',
+            fontSize: '16px', // Prevents iOS Safari auto-zoom
+            color: '#0F172A',
             backgroundColor: 'transparent',
           }}
         />
@@ -202,7 +211,7 @@ export default function Page() {
             padding: '8px 18px',
             borderRadius: '999px',
             border: 'none',
-            backgroundColor: roomInput.trim() ? '#F2545B' : '#EAE5DF',
+            backgroundColor: roomInput.trim() ? '#4F46E5' : '#E2E8F0',
             color: '#FFFFFF',
             fontSize: '13px',
             fontWeight: 700,
@@ -238,28 +247,28 @@ export default function Page() {
               style={{
                 backgroundColor: '#FFFFFF',
                 borderRadius: '20px',
-                border: '1px solid #ECE7E1',
+                border: '1px solid #E2E8F0',
                 padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 cursor: selectedTemplate ? 'default' : 'pointer',
                 position: 'relative',
                 overflow: 'hidden',
-                boxShadow: '0 4px 14px rgba(60, 50, 40, 0.04)',
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
                 transition: 'transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease',
               }}
               onMouseEnter={(e) => {
                 if (!selectedTemplate) {
                   e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow = '0 12px 28px rgba(60, 50, 40, 0.1)';
-                  e.currentTarget.style.borderColor = '#DFD9D0';
+                  e.currentTarget.style.boxShadow = '0 12px 28px rgba(15, 23, 42, 0.08)';
+                  e.currentTarget.style.borderColor = '#CBD5E1';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!selectedTemplate) {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(60, 50, 40, 0.04)';
-                  e.currentTarget.style.borderColor = '#ECE7E1';
+                  e.currentTarget.style.boxShadow = '0 4px 14px rgba(15, 23, 42, 0.04)';
+                  e.currentTarget.style.borderColor = '#E2E8F0';
                 }
               }}
             >
@@ -269,7 +278,7 @@ export default function Page() {
                   width: '100%',
                   height: '140px',
                   borderRadius: '14px',
-                  backgroundColor: '#FBF9F6',
+                  backgroundColor: '#F8FAFC',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -295,7 +304,7 @@ export default function Page() {
                 style={{
                   fontSize: '17px',
                   fontWeight: 700,
-                  color: '#2D3139',
+                  color: '#0F172A',
                   marginBottom: '4px',
                   lineHeight: 1.3,
                 }}
@@ -305,7 +314,7 @@ export default function Page() {
               <p
                 style={{
                   fontSize: '13px',
-                  color: '#656974',
+                  color: '#64748B',
                   lineHeight: 1.45,
                   margin: 0,
                   flex: 1,
@@ -330,9 +339,9 @@ export default function Page() {
                     zIndex: 10,
                   }}
                 >
-                  <Loader2 size={24} className="animate-spin" color="#F2545B" />
-                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#2D3139' }}>
-                    Creating your meeting...
+                  <Loader2 size={24} className="animate-spin" color="#4F46E5" />
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#0F172A' }}>
+                    Preparing executive space...
                   </span>
                 </div>
               )}
