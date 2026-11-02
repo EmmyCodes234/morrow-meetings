@@ -13,7 +13,7 @@ import {
 import { useLocalParticipant, useRemoteParticipants } from '@livekit/components-react';
 import { PopSpacePersonBubble } from '../popspace/PopSpacePersonBubble';
 import { PopSpaceActionBar } from '../popspace/PopSpaceActionBar';
-import { MeetingTemplatesModal, TemplateDefinition } from '../popspace/MeetingTemplatesModal';
+import { MeetingTemplatesModal, TemplateDefinition, TEMPLATES } from '../popspace/MeetingTemplatesModal';
 import { CanvasWidgetsLayer } from './CanvasWidgets';
 import { EdgeRadar } from './EdgeRadar';
 import { CanvasWidget, SpatialDataPacket, SpatialParticipantState } from './types';
@@ -32,9 +32,10 @@ interface SpatialCanvasProps {
   room: Room;
   roomName: string;
   userChoices?: UserChoices;
+  template?: string;
 }
 
-export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, userChoices }) => {
+export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, userChoices, template }) => {
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
@@ -58,17 +59,25 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
   const [isGlobalAudio, setIsGlobalAudio] = useState(false);
 
   // Canvas Widgets (Sticky notes, YouTube, Screen shares)
-  const [widgets, setWidgets] = useState<CanvasWidget[]>([
-    {
-      id: 'welcome-sticky',
-      type: 'sticky',
-      x: 140,
-      y: 200,
-      text: '✨ Welcome to Morrow Spaces!\n• Drag your bubble around\n• Tap anywhere to walk\n• Get close to hear people clearly',
-      color: 'mandarin',
-      creatorId: 'system',
-    },
-  ]);
+  const [widgets, setWidgets] = useState<CanvasWidget[]>(() => {
+    if (template) {
+      const tmpl = TEMPLATES.find((t) => t.id === template);
+      if (tmpl) {
+        return tmpl.generateWidgets(400, 350);
+      }
+    }
+    return [
+      {
+        id: 'welcome-sticky',
+        type: 'sticky',
+        x: 140,
+        y: 200,
+        text: '✨ Welcome to PopSpace!\n• Drag your avatar to walk\n• Tap anywhere to move\n• Move close to talk naturally',
+        color: 'mandarin',
+        creatorId: 'system',
+      },
+    ];
+  });
 
   // Media Controls State
   const [isMicOn, setIsMicOn] = useState(userChoices?.audioEnabled ?? true);

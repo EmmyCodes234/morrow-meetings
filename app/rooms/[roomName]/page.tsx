@@ -16,6 +16,7 @@ export default async function Page({
     hq?: string;
     codec?: string;
     singlePC?: string;
+    template?: string;
   }>;
 }) {
   const _params = await params;
@@ -38,6 +39,7 @@ export default async function Page({
       hq={hq}
       codec={codec}
       singlePeerConnection={singlePC}
+      template={_searchParams.template}
     />
   );
 }

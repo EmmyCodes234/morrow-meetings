@@ -51,6 +51,7 @@ export function PageClientImpl(props: {
   hq: boolean;
   codec: VideoCodec;
   singlePeerConnection: boolean;
+  template?: string;
 }) {
   const [popSpaceChoices, setPopSpaceChoices] = React.useState<PopSpaceUserChoices | undefined>(
     undefined,
@@ -105,6 +106,7 @@ export function PageClientImpl(props: {
           connectionDetails={connectionDetails}
           userChoices={popSpaceChoices}
           roomName={props.roomName}
+          template={props.template}
           options={{
             codec: props.codec,
             hq: props.hq,
@@ -120,6 +122,7 @@ function VideoConferenceComponent(props: {
   roomName: string;
   userChoices: PopSpaceUserChoices;
   connectionDetails: ConnectionDetails;
+  template?: string;
   options: {
     hq: boolean;
     codec: VideoCodec;
@@ -250,7 +253,7 @@ function VideoConferenceComponent(props: {
     <div className="lk-room-container">
       <RoomContext.Provider value={room}>
         <KeyboardShortcuts />
-        <SpatialCanvas room={room} roomName={props.roomName} userChoices={props.userChoices} />
+        <SpatialCanvas room={room} roomName={props.roomName} userChoices={props.userChoices} template={props.template} />
         <DebugMode />
         <RecordingIndicator />
       </RoomContext.Provider>

@@ -130,8 +130,8 @@ export const TEMPLATES: TemplateDefinition[] = [
   },
   {
     id: 'daily',
-    title: 'Daily Standup',
-    description: 'Quick circular sync board',
+    title: 'Daily Stand-Up',
+    description: 'Identify and tackle daily roadblocks.',
     image: '/templates/template_daily.png',
     generateWidgets: (cx, cy) => [
       {
@@ -146,9 +146,60 @@ export const TEMPLATES: TemplateDefinition[] = [
     ],
   },
   {
+    id: 'weekly',
+    title: 'Weekly Sync-Up',
+    description: "Check in on the team's progress.",
+    image: '/templates/template_weekly.png',
+    generateWidgets: (cx, cy) => [
+      {
+        id: `sticky-${Date.now()}-weekly`,
+        type: 'sticky',
+        x: cx - 140,
+        y: cy - 90,
+        text: "📅 Weekly Agenda\n• Highlights & Wins\n• KPI & Metrics Review\n• Key Initiatives for the Week",
+        color: 'blueberry',
+        creatorId: 'template',
+      },
+    ],
+  },
+  {
+    id: 'allHands',
+    title: 'All-Hands Meeting',
+    description: 'Keep everybody aligned with goals.',
+    image: '/templates/template_allHands.png',
+    generateWidgets: (cx, cy) => [
+      {
+        id: `sticky-${Date.now()}-allhands`,
+        type: 'sticky',
+        x: cx - 180,
+        y: cy - 100,
+        text: '🎙️ Company All-Hands\n• Company Updates & Vision\n• Product Milestones\n• Open Q&A Session',
+        color: 'mandarin',
+        creatorId: 'template',
+      },
+    ],
+  },
+  {
+    id: 'interview',
+    title: 'Remote Interview',
+    description: 'Find great people for your team.',
+    image: '/templates/template_interview.png',
+    generateWidgets: (cx, cy) => [
+      {
+        id: `sticky-${Date.now()}-interview`,
+        type: 'sticky',
+        x: cx - 120,
+        y: cy - 90,
+        text: '💼 Candidate Interview\n• Background & Experience\n• Deep-Dive Project Walkthrough\n• Candidate Questions for Us',
+        color: 'oregano',
+        creatorId: 'template',
+      },
+    ],
+  },
+  {
     id: 'blank',
-    title: 'Blank Canvas',
-    description: 'Fresh open space to design your own room',
+    title: 'Blank',
+    description: 'A blank room for your custom needs.',
     image: '/templates/template_blank.png',
     generateWidgets: () => [],
   },
