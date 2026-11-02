@@ -126,21 +126,22 @@ function StickyNoteItem({
         position: 'absolute',
         left: widget.x,
         top: widget.y,
-        width: 200,
+        width: 250,
         minHeight: 180,
         backgroundColor: colors.bg,
-        borderTop: `4px solid ${colors.border}`,
-        borderRadius: '12px',
+        border: `1px solid ${colors.border}`,
+        borderRadius: '16px',
         boxShadow: isDragging
-          ? '0 16px 32px rgba(60, 50, 40, 0.18), 0 4px 8px rgba(0,0,0,0.06)'
-          : '0 6px 18px rgba(60, 50, 40, 0.08), 0 2px 4px rgba(0,0,0,0.04)',
+          ? '0 18px 36px rgba(60, 50, 40, 0.16), 0 4px 10px rgba(0,0,0,0.06)'
+          : '0 8px 24px rgba(60, 50, 40, 0.08), 0 2px 6px rgba(0,0,0,0.04)',
         zIndex: isDragging ? 50 : 20,
-        padding: '12px',
+        padding: '14px 16px',
         display: 'flex',
         flexDirection: 'column',
         gap: '8px',
         touchAction: 'none',
         userSelect: 'none',
+        transition: isDragging ? 'none' : 'box-shadow 0.2s ease',
       }}
     >
       {/* Header with drag handle and delete */}
@@ -150,30 +151,37 @@ function StickyNoteItem({
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: isDragging ? 'grabbing' : 'grab',
-          paddingBottom: '4px',
-          borderBottom: '1px solid rgba(0,0,0,0.05)',
+          paddingBottom: '8px',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
         }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: colors.text }}>
-          <Move size={13} opacity={0.6} />
-          <span style={{ fontSize: '11px', fontWeight: 600, opacity: 0.8 }}>Note</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.text }}>
+          <div style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: colors.border }} />
+          <span style={{ fontSize: '12px', fontWeight: 700, letterSpacing: '0.02em' }}>Note</span>
         </div>
         <button
-          onClick={() => onDelete(widget.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(widget.id);
+          }}
           style={{
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            padding: '2px',
+            padding: '4px',
             color: '#949CBA',
-            borderRadius: '4px',
+            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'color 0.15s ease',
           }}
           title="Delete note"
         >
-          <Trash2 size={13} />
+          <Trash2 size={14} />
         </button>
       </div>
 
@@ -193,9 +201,10 @@ function StickyNoteItem({
           outline: 'none',
           resize: 'none',
           fontFamily: 'inherit',
-          fontSize: '13px',
-          lineHeight: '1.45',
+          fontSize: '14px',
+          lineHeight: '1.5',
           color: '#2D3139',
+          fontWeight: 500,
         }}
       />
     </div>

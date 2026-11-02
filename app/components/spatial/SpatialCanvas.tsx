@@ -18,7 +18,21 @@ import { CanvasWidgetsLayer } from './CanvasWidgets';
 import { EdgeRadar } from './EdgeRadar';
 import { CanvasWidget, SpatialDataPacket, SpatialParticipantState } from './types';
 import { calculateDistance, computeProximityVolume } from './proximityAudio';
-import { Share2, Users, Volume2, Radio, Check } from 'lucide-react';
+import {
+  Share2,
+  Users,
+  Volume2,
+  Radio,
+  Check,
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  Monitor,
+  PhoneOff,
+  Plus,
+  Navigation,
+} from 'lucide-react';
 
 export interface UserChoices {
   username: string;
@@ -43,8 +57,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
 
-  // Local Participant Position & Avatar
-  const [localPos, setLocalPos] = useState({ x: 400, y: 350 });
+  // Local Participant Position & Avatar (spawned safely below template widgets)
+  const [localPos, setLocalPos] = useState({ x: 400, y: 460 });
   const [localAvatarColor] = useState(() => userChoices?.avatarBgColor || '#FFF5DD');
   const [localAvatarId] = useState(() => userChoices?.avatarId || 'avocado');
   const [isDraggingLocal, setIsDraggingLocal] = useState(false);
@@ -96,8 +110,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
         const { clientWidth, clientHeight } = containerRef.current;
         setViewportSize({ width: clientWidth, height: clientHeight });
         setPan({
-          x: clientWidth / 2 - localPos.x,
-          y: clientHeight / 2 - localPos.y,
+          x: clientWidth / 2 - 400 * zoom,
+          y: clientHeight / 2 - 300 * zoom,
         });
       }
     };
@@ -554,72 +568,162 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
         }}
       />
 
-      {/* Top Header Bar */}
+      {/* PopSpace Room Taskbar */}
       <header
         style={{
           position: 'fixed',
-          top: 'max(16px, env(safe-area-inset-top))',
-          left: '20px',
-          right: '20px',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '56px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          padding: '0 20px',
+          backgroundColor: '#FFFFFF',
+          borderBottom: '1px solid #ECE7E1',
+          boxShadow: '0 2px 10px rgba(60, 50, 40, 0.04)',
           zIndex: 80,
-          pointerEvents: 'none',
         }}
       >
-        {/* Room Title & Participant Count */}
-        <div
-          style={{
-            pointerEvents: 'auto',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '8px 16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.94)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderRadius: '999px',
-            border: '1px solid #EAE5DF',
-            boxShadow: '0 4px 16px rgba(60, 50, 40, 0.08)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 700, color: '#2D3139', letterSpacing: '-0.01em' }}>
-              {roomName}
-            </span>
-          </div>
-
-          <div style={{ width: 1, height: 16, backgroundColor: '#EAE5DF' }} />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#575F75', fontSize: '13px' }}>
-            <Users size={14} />
-            <span style={{ fontWeight: 600 }}>{remoteParticipants.length + 1}</span>
+        {/* Left: PopSpace Logo & Room Pill */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <img
+            src="/logo.svg"
+            alt="PopSpace logo"
+            style={{ height: '18px', width: 'auto', display: 'block', cursor: 'pointer' }}
+            onClick={() => (window.location.href = '/')}
+          />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 10px',
+              borderRadius: '999px',
+              backgroundColor: '#FBF9F6',
+              border: '1px solid #ECE7E1',
+              fontSize: '12px',
+              fontWeight: 700,
+              color: '#575F75',
+            }}
+          >
+            <span>{roomName}</span>
+            <span style={{ color: '#949CBA' }}>•</span>
+            <Users size={12} />
+            <span>{remoteParticipants.length + 1}</span>
           </div>
         </div>
 
-        {/* Right Action: Share Link Pill */}
-        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {/* Center: Media Toggles */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Mic */}
+          <button
+            onClick={handleToggleMic}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '999px',
+              border: 'none',
+              backgroundColor: isMicOn ? '#F4F5F8' : '#FDEEEC',
+              color: isMicOn ? '#2D3139' : '#EE6659',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isMicOn ? <Mic size={15} /> : <MicOff size={15} />}
+            <span className="hidden sm:inline">{isMicOn ? 'Mute' : 'Unmuted'}</span>
+          </button>
+
+          {/* Camera */}
+          <button
+            onClick={handleToggleVideo}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '999px',
+              border: 'none',
+              backgroundColor: isVideoOn ? '#F4F5F8' : '#FBF9F6',
+              color: isVideoOn ? '#2D3139' : '#575F75',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            {isVideoOn ? <Video size={15} /> : <VideoOff size={15} />}
+            <span className="hidden sm:inline">{isVideoOn ? 'Cam On' : 'Avatar'}</span>
+          </button>
+
+          {/* Screen Share */}
+          <button
+            onClick={handleToggleScreenShare}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '999px',
+              border: 'none',
+              backgroundColor: isScreenSharing ? '#E4FBF8' : '#F4F5F8',
+              color: isScreenSharing ? '#00786D' : '#2D3139',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.15s ease',
+            }}
+          >
+            <Monitor size={15} />
+            <span className="hidden sm:inline">{isScreenSharing ? 'Sharing' : 'Share'}</span>
+          </button>
+        </div>
+
+        {/* Right: Copy Link & Leave */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <button
             onClick={handleCopyLink}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '8px 16px',
-              backgroundColor: '#FFFFFF',
+              padding: '7px 14px',
               borderRadius: '999px',
-              border: '1px solid #EAE5DF',
-              boxShadow: '0 4px 16px rgba(60, 50, 40, 0.08)',
+              border: '1px solid #ECE7E1',
+              backgroundColor: '#FFFFFF',
               color: copiedLink ? '#00786D' : '#2D3139',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
-              transition: 'all 0.2s ease',
             }}
           >
             {copiedLink ? <Check size={14} color="#00786D" /> : <Share2 size={14} />}
-            <span>{copiedLink ? 'Link Copied!' : 'Invite Friends'}</span>
+            <span className="hidden sm:inline">{copiedLink ? 'Copied!' : 'Copy Link'}</span>
+          </button>
+
+          <button
+            onClick={() => (window.location.href = '/')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 14px',
+              borderRadius: '999px',
+              border: 'none',
+              backgroundColor: '#FDEEEC',
+              color: '#EE6659',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            <PhoneOff size={14} />
+            <span className="hidden sm:inline">Leave</span>
           </button>
         </div>
       </header>
@@ -704,22 +808,167 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, us
         onFocusPeer={handleFocusPeer}
       />
 
-      {/* PopSpace Floating Action Dock */}
-      <PopSpaceActionBar
-        isMicOn={isMicOn}
-        isVideoOn={isVideoOn}
-        isScreenSharing={isScreenSharing}
-        isGlobalAudio={isGlobalAudio}
-        onToggleMic={handleToggleMic}
-        onToggleVideo={handleToggleVideo}
-        onToggleScreenShare={handleToggleScreenShare}
-        onToggleGlobalAudio={handleToggleGlobalAudio}
-        onAddSticky={handleAddSticky}
-        onAddYouTube={handleAddYouTube}
-        onOpenTemplates={() => setIsTemplatesOpen(true)}
-        onRecenter={handleRecenter}
-        onLeave={() => (window.location.href = '/')}
-      />
+      {/* PopSpace Viewport Zoom & Recenter Controls */}
+      <div
+        style={{
+          position: 'fixed',
+          right: '24px',
+          bottom: '24px',
+          zIndex: 90,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
+        <button
+          onClick={handleRecenter}
+          title="Center on my avatar"
+          style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '50%',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #ECE7E1',
+            boxShadow: '0 4px 14px rgba(60, 50, 40, 0.08)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#2D3139',
+            cursor: 'pointer',
+          }}
+        >
+          <Navigation size={18} />
+        </button>
+
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: '#FFFFFF',
+            borderRadius: '12px',
+            border: '1px solid #ECE7E1',
+            boxShadow: '0 4px 14px rgba(60, 50, 40, 0.08)',
+            overflow: 'hidden',
+          }}
+        >
+          <button
+            onClick={() => setZoom((z) => Math.min(2.0, Number((z * 1.15).toFixed(2))))}
+            title="Zoom In"
+            style={{
+              width: '40px',
+              height: '36px',
+              border: 'none',
+              borderBottom: '1px solid #ECE7E1',
+              backgroundColor: '#FFFFFF',
+              color: '#2D3139',
+              fontSize: '18px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            +
+          </button>
+          <button
+            onClick={() => setZoom((z) => Math.max(0.4, Number((z * 0.85).toFixed(2))))}
+            title="Zoom Out"
+            style={{
+              width: '40px',
+              height: '36px',
+              border: 'none',
+              backgroundColor: '#FFFFFF',
+              color: '#2D3139',
+              fontSize: '18px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            -
+          </button>
+        </div>
+      </div>
+
+      {/* PopSpace Bottom Action Bar (Quick Add & Proximity Audio) */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 90,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+        }}
+      >
+        <button
+          onClick={() => setIsTemplatesOpen(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            borderRadius: '999px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #ECE7E1',
+            boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
+            color: '#2D3139',
+            fontSize: '13px',
+            fontWeight: 700,
+            cursor: 'pointer',
+          }}
+        >
+          <Plus size={16} />
+          <span>Add Content</span>
+        </button>
+
+        <button
+          onClick={handleAddSticky}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 16px',
+            borderRadius: '999px',
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #ECE7E1',
+            boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
+            color: '#2D3139',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          <span>+ Sticky</span>
+        </button>
+
+        <button
+          onClick={handleToggleGlobalAudio}
+          title={isGlobalAudio ? 'Switch to Proximity Audio' : 'Switch to Room-wide Audio'}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '10px 16px',
+            borderRadius: '999px',
+            backgroundColor: isGlobalAudio ? '#FFF5DD' : '#FFFFFF',
+            border: `1px solid ${isGlobalAudio ? '#F1A41D' : '#ECE7E1'}`,
+            boxShadow: '0 6px 20px rgba(60, 50, 40, 0.1)',
+            color: isGlobalAudio ? '#7C4F00' : '#575F75',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          <Radio size={14} color={isGlobalAudio ? '#7C4F00' : '#575F75'} />
+          <span>{isGlobalAudio ? 'Global Audio' : 'Nearby Audio'}</span>
+        </button>
+      </div>
 
       {/* PopSpace Meeting Templates Modal */}
       <MeetingTemplatesModal
