@@ -11,23 +11,30 @@ import {
   RemoteAudioTrack,
 } from 'livekit-client';
 import { useLocalParticipant, useRemoteParticipants } from '@livekit/components-react';
-import { PersonBubble } from './PersonBubble';
+import { PopSpacePersonBubble } from '../popspace/PopSpacePersonBubble';
+import { PopSpaceActionBar } from '../popspace/PopSpaceActionBar';
+import { MeetingTemplatesModal, TemplateDefinition } from '../popspace/MeetingTemplatesModal';
 import { CanvasWidgetsLayer } from './CanvasWidgets';
-import { BottomBar } from './BottomBar';
 import { EdgeRadar } from './EdgeRadar';
 import { CanvasWidget, SpatialDataPacket, SpatialParticipantState } from './types';
 import { calculateDistance, computeProximityVolume } from './proximityAudio';
 import { Share2, Users, Volume2, Radio, Check } from 'lucide-react';
 
+export interface UserChoices {
+  username: string;
+  avatarId: string;
+  avatarBgColor: string;
+  videoEnabled: boolean;
+  audioEnabled: boolean;
+}
+
 interface SpatialCanvasProps {
   room: Room;
   roomName: string;
+  userChoices?: UserChoices;
 }
 
-const AVATAR_COLORS = ['#FFEAB6', '#EAE8FC', '#D4F6F2', '#FFD0C8', '#E3F2FC'];
-const AVATAR_EMOJIS = ['🦊', '🐼', '🐱', '🥑', '🚀', '🎨', '🌟', '⚡', '☕', '🎧'];
-
-export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) => {
+export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName, userChoices }) => {
   const { localParticipant } = useLocalParticipant();
   const remoteParticipants = useRemoteParticipants();
 
@@ -37,9 +44,12 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
 
   // Local Participant Position & Avatar
   const [localPos, setLocalPos] = useState({ x: 400, y: 350 });
-  const [localAvatarColor] = useState(() => AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
-  const [localAvatarEmoji] = useState(() => AVATAR_EMOJIS[Math.floor(Math.random() * AVATAR_EMOJIS.length)]);
+  const [localAvatarColor] = useState(() => userChoices?.avatarBgColor || '#FFF5DD');
+  const [localAvatarId] = useState(() => userChoices?.avatarId || 'avocado');
   const [isDraggingLocal, setIsDraggingLocal] = useState(false);
+
+  // Templates Modal State
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
 
   // Remote Participant Positions
   const [peerStates, setPeerStates] = useState<Record<string, SpatialParticipantState>>({});
@@ -61,8 +71,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
   ]);
 
   // Media Controls State
-  const [isMicOn, setIsMicOn] = useState(true);
-  const [isVideoOn, setIsVideoOn] = useState(true);
+  const [isMicOn, setIsMicOn] = useState(userChoices?.audioEnabled ?? true);
+  const [isVideoOn, setIsVideoOn] = useState(userChoices?.videoEnabled ?? true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -118,8 +128,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
                 name: participant?.name || packet.id,
                 x: packet.x,
                 y: packet.y,
-                avatarColor: existing?.avatarColor || '#EAE8FC',
-                avatarEmoji: existing?.avatarEmoji || '😊',
+                avatarColor: existing?.avatarColor || '#FFF5DD',
+                avatarId: existing?.avatarId || 'avocado',
                 lastActive: Date.now(),
               },
             };
@@ -132,8 +142,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
               name: packet.name || packet.id,
               x: packet.x,
               y: packet.y,
-              avatarColor: packet.avatarColor,
-              avatarEmoji: packet.avatarEmoji,
+              avatarColor: packet.avatarColor || '#FFF5DD',
+              avatarId: packet.avatarId || 'avocado',
               lastActive: Date.now(),
             },
           }));
@@ -142,14 +152,27 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
             {
               type: 'hello',
               id: room.localParticipant.identity,
-              name: room.localParticipant.name || room.localParticipant.identity,
+              name: room.localParticipant.name || userChoices?.username || room.localParticipant.identity,
               x: localPos.x,
               y: localPos.y,
               avatarColor: localAvatarColor,
-              avatarEmoji: localAvatarEmoji,
+              avatarId: localAvatarId,
             },
             true
           );
+        } else if (packet.type === 'profile') {
+          setPeerStates((prev) => ({
+            ...prev,
+            [packet.id]: {
+              identity: packet.id,
+              name: packet.name || packet.id,
+              x: prev[packet.id]?.x ?? 550,
+              y: prev[packet.id]?.y ?? 350,
+              avatarColor: packet.avatarColor || '#FFF5DD',
+              avatarId: packet.avatarId || 'avocado',
+              lastActive: Date.now(),
+            },
+          }));
         } else if (packet.type === 'widget_add') {
           setWidgets((prev) => (prev.some((w) => w.id === packet.widget.id) ? prev : [...prev, packet.widget]));
         } else if (packet.type === 'widget_update') {
@@ -174,11 +197,11 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
         {
           type: 'hello',
           id: room.localParticipant.identity,
-          name: room.localParticipant.name || room.localParticipant.identity,
+          name: room.localParticipant.name || userChoices?.username || room.localParticipant.identity,
           x: localPos.x,
           y: localPos.y,
           avatarColor: localAvatarColor,
-          avatarEmoji: localAvatarEmoji,
+          avatarId: localAvatarId,
         },
         true
       );
@@ -187,7 +210,7 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
     return () => {
       room.off(RoomEvent.DataReceived, handleDataReceived);
     };
-  }, [room, localPos, localAvatarColor, localAvatarEmoji, broadcastPacket]);
+  }, [room, localPos, localAvatarColor, localAvatarId, userChoices, broadcastPacket]);
 
   // Clean up departed participants
   useEffect(() => {
@@ -294,6 +317,12 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
 
     // Canvas Background Dragging (Panning)
     if (isPanning && panStartRef.current) {
+      if (pointerDownPosRef.current) {
+        const dist = Math.hypot(e.clientX - pointerDownPosRef.current.x, e.clientY - pointerDownPosRef.current.y);
+        if (dist > 6) {
+          hasDraggedRef.current = true;
+        }
+      }
       const dx = e.clientX - panStartRef.current.x;
       const dy = e.clientY - panStartRef.current.y;
       setPan({
@@ -322,12 +351,16 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
   // Canvas Panning State
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const pointerDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const hasDraggedRef = useRef(false);
 
   // Background pointer down (Pan or Tap-to-walk)
   const handleCanvasPointerDown = (e: React.PointerEvent) => {
     // Only handle primary button
     if (e.button !== 0) return;
 
+    pointerDownPosRef.current = { x: e.clientX, y: e.clientY };
+    hasDraggedRef.current = false;
     setIsPanning(true);
     panStartRef.current = {
       x: e.clientX,
@@ -339,6 +372,7 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
 
   // Tap to walk: Quick click on canvas floor moves avatar smoothly there
   const handleCanvasClick = (e: React.MouseEvent) => {
+    if (hasDraggedRef.current) return;
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -445,6 +479,15 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
   const handleDeleteWidget = (id: string) => {
     setWidgets((prev) => prev.filter((w) => w.id !== id));
     broadcastPacket({ type: 'widget_delete', id }, true);
+  };
+
+  const handleSelectTemplate = (tmpl: TemplateDefinition) => {
+    const newWidgets = tmpl.generateWidgets(localPos.x, localPos.y);
+    setWidgets((prev) => [...prev, ...newWidgets]);
+    newWidgets.forEach((w) => {
+      broadcastPacket({ type: 'widget_add', widget: w }, true);
+    });
+    setIsTemplatesOpen(false);
   };
 
   const handleRecenter = () => {
@@ -594,7 +637,7 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
           localParticipant={localParticipant}
         />
 
-        {/* Remote Participants */}
+        {/* Remote Participants with Authentic PopSpace Animated Sprites */}
         {remoteParticipants.map((participant) => {
           const peer = peerStates[participant.identity];
           const x = peer?.x ?? 550;
@@ -602,30 +645,40 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
           const dist = calculateDistance(localPos.x, localPos.y, x, y);
           const volPercent = isGlobalAudio ? 100 : Math.round(computeProximityVolume(dist) * 100);
 
+          let avatarId = peer?.avatarId || 'avocado';
+          let avatarBgColor = peer?.avatarColor || '#FFF5DD';
+          if (participant.metadata) {
+            try {
+              const meta = JSON.parse(participant.metadata);
+              if (meta.avatarId) avatarId = meta.avatarId;
+              if (meta.avatarBgColor) avatarBgColor = meta.avatarBgColor;
+            } catch (e) {}
+          }
+
           return (
-            <PersonBubble
+            <PopSpacePersonBubble
               key={participant.identity}
               participant={participant}
               isLocal={false}
               x={x}
               y={y}
               name={peer?.name || participant.name || participant.identity}
-              avatarColor={peer?.avatarColor || '#EAE8FC'}
-              avatarEmoji={peer?.avatarEmoji || '😊'}
+              avatarId={avatarId}
+              avatarBgColor={avatarBgColor}
               volumePercent={volPercent}
             />
           );
         })}
 
-        {/* Local Participant Bubble */}
-        <PersonBubble
+        {/* Local Participant Bubble with Authentic PopSpace Sprite */}
+        <PopSpacePersonBubble
           participant={localParticipant}
           isLocal={true}
           x={localPos.x}
           y={localPos.y}
-          name={localParticipant.name || 'You'}
-          avatarColor={localAvatarColor}
-          avatarEmoji={localAvatarEmoji}
+          name={localParticipant.name || userChoices?.username || 'You'}
+          avatarId={userChoices?.avatarId || localAvatarId}
+          avatarBgColor={userChoices?.avatarBgColor || localAvatarColor}
           isDragging={isDraggingLocal}
           onPointerDown={handleLocalPointerDown}
           showRangeRing={!isGlobalAudio}
@@ -642,9 +695,8 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
         onFocusPeer={handleFocusPeer}
       />
 
-      {/* Floating Bottom Bar (Thumb friendly) */}
-      <BottomBar
-        room={room}
+      {/* PopSpace Floating Action Dock */}
+      <PopSpaceActionBar
         isMicOn={isMicOn}
         isVideoOn={isVideoOn}
         isScreenSharing={isScreenSharing}
@@ -655,8 +707,16 @@ export const SpatialCanvas: React.FC<SpatialCanvasProps> = ({ room, roomName }) 
         onToggleGlobalAudio={handleToggleGlobalAudio}
         onAddSticky={handleAddSticky}
         onAddYouTube={handleAddYouTube}
+        onOpenTemplates={() => setIsTemplatesOpen(true)}
         onRecenter={handleRecenter}
         onLeave={() => (window.location.href = '/')}
+      />
+
+      {/* PopSpace Meeting Templates Modal */}
+      <MeetingTemplatesModal
+        isOpen={isTemplatesOpen}
+        onClose={() => setIsTemplatesOpen(false)}
+        onSelectTemplate={handleSelectTemplate}
       />
     </div>
   );

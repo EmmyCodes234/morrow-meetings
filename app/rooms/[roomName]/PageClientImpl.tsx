@@ -8,10 +8,9 @@ import { RecordingIndicator } from '@/lib/RecordingIndicator';
 import { SettingsMenu } from '@/lib/SettingsMenu';
 import { ConnectionDetails } from '@/lib/types';
 import { SpatialCanvas } from '@/app/components/spatial/SpatialCanvas';
+import { PopSpacePreJoin } from '@/app/components/popspace/PopSpacePreJoin';
 import {
   formatChatMessageLinks,
-  LocalUserChoices,
-  PreJoin,
   RoomContext,
   VideoConference,
 } from '@livekit/components-react';
@@ -35,6 +34,16 @@ const CONN_DETAILS_ENDPOINT =
   process.env.NEXT_PUBLIC_CONN_DETAILS_ENDPOINT ?? '/api/connection-details';
 const SHOW_SETTINGS_MENU = process.env.NEXT_PUBLIC_SHOW_SETTINGS_MENU == 'true';
 
+export interface PopSpaceUserChoices {
+  username: string;
+  avatarId: string;
+  avatarBgColor: string;
+  videoEnabled: boolean;
+  audioEnabled: boolean;
+  videoDeviceId?: string;
+  audioDeviceId?: string;
+}
+
 export function PageClientImpl(props: {
   roomName: string;
   serverUrl?: string;
@@ -43,16 +52,9 @@ export function PageClientImpl(props: {
   codec: VideoCodec;
   singlePeerConnection: boolean;
 }) {
-  const [preJoinChoices, setPreJoinChoices] = React.useState<LocalUserChoices | undefined>(
+  const [popSpaceChoices, setPopSpaceChoices] = React.useState<PopSpaceUserChoices | undefined>(
     undefined,
   );
-  const preJoinDefaults = React.useMemo(() => {
-    return {
-      username: '',
-      videoEnabled: true,
-      audioEnabled: true,
-    };
-  }, []);
   const [connectionDetails, setConnectionDetails] = React.useState<ConnectionDetails | undefined>(
     undefined,
   );
@@ -65,34 +67,43 @@ export function PageClientImpl(props: {
     }
   }, [props.serverUrl]);
 
-  const handlePreJoinSubmit = React.useCallback(async (values: LocalUserChoices) => {
-    setPreJoinChoices(values);
-    const url = new URL(CONN_DETAILS_ENDPOINT, window.location.origin);
-    url.searchParams.append('roomName', props.roomName);
-    url.searchParams.append('participantName', values.username);
-    if (props.region) {
-      url.searchParams.append('region', props.region);
-    }
-    const connectionDetailsResp = await fetch(url.toString());
-    const connectionDetailsData = await connectionDetailsResp.json();
-    setConnectionDetails(connectionDetailsData);
-  }, []);
-  const handlePreJoinError = React.useCallback((e: any) => console.error(e), []);
+  const handlePopSpaceJoin = React.useCallback(
+    async (values: {
+      username: string;
+      avatarId: string;
+      avatarBgColor: string;
+      videoEnabled: boolean;
+      audioEnabled: boolean;
+    }) => {
+      setPopSpaceChoices(values);
+      const url = new URL(CONN_DETAILS_ENDPOINT, window.location.origin);
+      url.searchParams.append('roomName', props.roomName);
+      url.searchParams.append('participantName', values.username);
+      url.searchParams.append(
+        'metadata',
+        JSON.stringify({
+          avatarId: values.avatarId,
+          avatarBgColor: values.avatarBgColor,
+        }),
+      );
+      if (props.region) {
+        url.searchParams.append('region', props.region);
+      }
+      const connectionDetailsResp = await fetch(url.toString());
+      const connectionDetailsData = await connectionDetailsResp.json();
+      setConnectionDetails(connectionDetailsData);
+    },
+    [props.roomName, props.region],
+  );
 
   return (
-    <main data-lk-theme="default" style={{ height: '100%' }}>
-      {connectionDetails === undefined || preJoinChoices === undefined ? (
-        <div style={{ display: 'grid', placeItems: 'center', height: '100%' }}>
-          <PreJoin
-            defaults={preJoinDefaults}
-            onSubmit={handlePreJoinSubmit}
-            onError={handlePreJoinError}
-          />
-        </div>
+    <main style={{ height: '100%', width: '100%', overflow: 'hidden' }}>
+      {connectionDetails === undefined || popSpaceChoices === undefined ? (
+        <PopSpacePreJoin roomName={props.roomName} onJoin={handlePopSpaceJoin} />
       ) : (
         <VideoConferenceComponent
           connectionDetails={connectionDetails}
-          userChoices={preJoinChoices}
+          userChoices={popSpaceChoices}
           roomName={props.roomName}
           options={{
             codec: props.codec,
@@ -107,7 +118,7 @@ export function PageClientImpl(props: {
 
 function VideoConferenceComponent(props: {
   roomName: string;
-  userChoices: LocalUserChoices;
+  userChoices: PopSpaceUserChoices;
   connectionDetails: ConnectionDetails;
   options: {
     hq: boolean;
@@ -239,7 +250,7 @@ function VideoConferenceComponent(props: {
     <div className="lk-room-container">
       <RoomContext.Provider value={room}>
         <KeyboardShortcuts />
-        <SpatialCanvas room={room} roomName={props.roomName} />
+        <SpatialCanvas room={room} roomName={props.roomName} userChoices={props.userChoices} />
         <DebugMode />
         <RecordingIndicator />
       </RoomContext.Provider>

@@ -42,13 +42,31 @@ export interface SpatialParticipantState {
   x: number;
   y: number;
   avatarColor: string;
-  avatarEmoji: string;
+  avatarEmoji?: string;
+  avatarId?: string;
   lastActive: number;
 }
 
 export type SpatialDataPacket =
   | { type: 'pos'; id: string; x: number; y: number }
-  | { type: 'hello'; id: string; name: string; x: number; y: number; avatarColor: string; avatarEmoji: string }
+  | {
+      type: 'hello';
+      id: string;
+      name: string;
+      x: number;
+      y: number;
+      avatarColor: string;
+      avatarEmoji?: string;
+      avatarId?: string;
+    }
+  | {
+      type: 'profile';
+      id: string;
+      name: string;
+      avatarColor: string;
+      avatarEmoji?: string;
+      avatarId?: string;
+    }
   | { type: 'widget_add'; widget: CanvasWidget }
   | { type: 'widget_update'; id: string; updates: Partial<CanvasWidget> }
   | { type: 'widget_delete'; id: string }
