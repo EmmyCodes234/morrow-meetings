@@ -2,24 +2,21 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: #09090b;
-  color: #f4f4f5;
+  background-color: #FFF8F0;
+  color: #2D3139;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: relative;
   overflow-x: hidden;
 }
 
-/* Subtle background glow */
+/* Warm subtle dot-grid background */
 .container::before {
   content: '';
   position: absolute;
-  top: 15%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 600px;
-  height: 350px;
-  background: radial-gradient(circle, rgba(99, 102, 241, 0.12) 0%, rgba(16, 185, 129, 0.05) 50%, transparent 70%);
-  filter: blur(80px);
+  inset: 0;
+  background-image: radial-gradient(#D4CEBA 1.2px, transparent 1.2px);
+  background-size: 32px 32px;
+  opacity: 0.5;
   pointer-events: none;
   z-index: 0;
 }
@@ -31,7 +28,10 @@
   align-items: center;
   padding: 1.5rem 2.5rem;
   z-index: 10;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid #EAE5DF;
+  background: rgba(255, 248, 240, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
 .logoGroup {
@@ -44,24 +44,23 @@
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981, #06b6d4);
-  box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+  background: linear-gradient(135deg, #F1A41D, #EE6659);
+  box-shadow: 0 0 10px rgba(241, 164, 29, 0.4);
 }
 
 .logoText {
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.03em;
-  color: #ffffff;
+  color: #2D3139;
 }
 
 .badge {
   font-size: 0.75rem;
-  font-weight: 500;
-  color: #a1a1aa;
-  padding: 0.35rem 0.75rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #7C4F00;
+  padding: 0.35rem 0.85rem;
+  background: #FFEAB6;
   border-radius: 9999px;
 }
 
@@ -76,7 +75,7 @@
 }
 
 .heroContent {
-  max-width: 640px;
+  max-width: 660px;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -87,79 +86,109 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.825rem;
-  color: #d4d4d8;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 0.4rem 1rem;
+  background: #FFFFFF;
+  border: 1px solid #EAE5DF;
   border-radius: 9999px;
-  margin-bottom: 1.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #575F75;
+  box-shadow: 0 2px 6px rgba(60, 50, 40, 0.05);
+  margin-bottom: 1.5rem;
 }
 
 .pulseDot {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background-color: #10b981;
-  box-shadow: 0 0 8px #10b981;
+  background-color: #70BBB2;
+  box-shadow: 0 0 0 0 rgba(112, 187, 178, 0.7);
+  animation: pulseGreen 2s infinite;
+}
+
+@keyframes pulseGreen {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(112, 187, 178, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(112, 187, 178, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(112, 187, 178, 0);
+  }
 }
 
 .title {
-  font-size: 3.5rem;
+  font-size: clamp(2.5rem, 6vw, 3.8rem);
   font-weight: 800;
+  line-height: 1.08;
   letter-spacing: -0.04em;
-  line-height: 1.1;
-  margin: 0 0 1.25rem;
-  color: #ffffff;
+  color: #2D3139;
+  margin: 0 0 1.25rem 0;
 }
 
 .gradientText {
-  background: linear-gradient(135deg, #38bdf8 0%, #34d399 100%);
+  background: linear-gradient(135deg, #F1A41D 0%, #EE6659 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .subtitle {
-  font-size: 1.125rem;
+  font-size: 1.15rem;
   line-height: 1.6;
-  color: #a1a1aa;
-  margin: 0 0 2.5rem;
-  max-width: 520px;
+  color: #575F75;
+  margin: 0 0 2.5rem 0;
+  max-width: 540px;
 }
 
-/* Action Row */
+/* Action Controls */
 .actionRow {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: center;
   gap: 1rem;
-  justify-content: center;
   width: 100%;
-  max-width: 520px;
-  margin-bottom: 3rem;
+  max-width: 480px;
+}
+
+@media (min-width: 640px) {
+  .actionRow {
+    flex-direction: row;
+  }
 }
 
 .primaryButton {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  background: #2563eb;
-  color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 600;
-  padding: 0.85rem 1.4rem;
-  border-radius: 0.75rem;
+  gap: 0.6rem;
+  background-color: #F1A41D;
+  color: #FFFFFF;
   border: none;
+  border-radius: 9999px;
+  padding: 0.95rem 1.75rem;
+  font-size: 1rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 4px 14px rgba(241, 164, 29, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
   white-space: nowrap;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .primaryButton {
+    width: auto;
+  }
 }
 
 .primaryButton:hover {
-  background: #1d4ed8;
+  background-color: #E09310;
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.45);
+  box-shadow: 0 6px 20px rgba(241, 164, 29, 0.45);
 }
 
 .primaryButton:active {
@@ -168,9 +197,9 @@
 
 .joinForm {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
-  flex: 1;
-  min-width: 260px;
+  width: 100%;
 }
 
 .inputWrapper {
@@ -182,98 +211,80 @@
 
 .inputIcon {
   position: absolute;
-  left: 0.9rem;
-  color: #71717a;
+  left: 1rem;
+  color: #949CBA;
   pointer-events: none;
 }
 
 .joinInput {
   width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 0.75rem;
-  padding: 0.85rem 1rem 0.85rem 2.5rem;
-  color: #ffffff;
+  padding: 0.9rem 1rem 0.9rem 2.8rem;
+  background: #FFFFFF;
+  border: 1px solid #EAE5DF;
+  border-radius: 9999px;
+  color: #2D3139;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  box-shadow: 0 2px 6px rgba(60, 50, 40, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .joinInput:focus {
-  border-color: #38bdf8;
-  background: rgba(255, 255, 255, 0.08);
+  border-color: #9993EB;
+  box-shadow: 0 0 0 3px rgba(153, 147, 235, 0.2);
 }
 
 .joinInput::placeholder {
-  color: #71717a;
+  color: #949CBA;
 }
 
-.secondaryButton {
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+.joinButton {
+  padding: 0.9rem 1.4rem;
+  background: #FFFFFF;
+  color: #2D3139;
+  border: 1px solid #EAE5DF;
+  border-radius: 9999px;
   font-size: 0.95rem;
-  font-weight: 600;
-  padding: 0.85rem 1.25rem;
-  border-radius: 0.75rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(60, 50, 40, 0.04);
+  transition: all 0.15s ease;
 }
 
-.secondaryButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
+.joinButton:hover:not(:disabled) {
+  background: #F4F5F8;
+  border-color: #BEC3D7;
 }
 
-.secondaryButton:disabled {
-  opacity: 0.4;
+.joinButton:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Feature List */
-.featureList {
+/* Feature Highlights */
+.featureHighlights {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 3.5rem;
+  padding-top: 2rem;
+  border-top: 1px solid #EAE5DF;
   width: 100%;
 }
 
-.featureItem {
+.highlightItem {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.825rem;
-  color: #a1a1aa;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #575F75;
 }
 
-.featureItem svg {
-  color: #10b981;
-}
-
-/* Footer */
-.footer {
-  padding: 1.5rem;
-  text-align: center;
-  font-size: 0.825rem;
-  color: #71717a;
-  border-top: 1px solid rgba(255, 255, 255, 0.04);
-  z-index: 10;
-}
-
-@media (max-width: 640px) {
-  .title {
-    font-size: 2.5rem;
-  }
-  .navbar {
-    padding: 1.25rem 1.5rem;
-  }
-  .actionRow {
-    flex-direction: column;
-  }
-  .joinForm {
-    width: 100%;
-  }
+.highlightDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #F1A41D;
 }

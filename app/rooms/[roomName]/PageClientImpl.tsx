@@ -7,6 +7,7 @@ import { KeyboardShortcuts } from '@/lib/KeyboardShortcuts';
 import { RecordingIndicator } from '@/lib/RecordingIndicator';
 import { SettingsMenu } from '@/lib/SettingsMenu';
 import { ConnectionDetails } from '@/lib/types';
+import { SpatialCanvas } from '@/app/components/spatial/SpatialCanvas';
 import {
   formatChatMessageLinks,
   LocalUserChoices,
@@ -92,6 +93,7 @@ export function PageClientImpl(props: {
         <VideoConferenceComponent
           connectionDetails={connectionDetails}
           userChoices={preJoinChoices}
+          roomName={props.roomName}
           options={{
             codec: props.codec,
             hq: props.hq,
@@ -104,6 +106,7 @@ export function PageClientImpl(props: {
 }
 
 function VideoConferenceComponent(props: {
+  roomName: string;
   userChoices: LocalUserChoices;
   connectionDetails: ConnectionDetails;
   options: {
@@ -236,10 +239,7 @@ function VideoConferenceComponent(props: {
     <div className="lk-room-container">
       <RoomContext.Provider value={room}>
         <KeyboardShortcuts />
-        <VideoConference
-          chatMessageFormatter={formatChatMessageLinks}
-          SettingsComponent={SHOW_SETTINGS_MENU ? SettingsMenu : undefined}
-        />
+        <SpatialCanvas room={room} roomName={props.roomName} />
         <DebugMode />
         <RecordingIndicator />
       </RoomContext.Provider>
